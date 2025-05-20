@@ -1,6 +1,6 @@
 // src/viewmodels/useProfileViewModel.js
 import { useState, useEffect } from 'react';
-import { getPerfil } from '../models/api';
+import { getPerfil } from '../models/auth.model.js';
 
 export default function useProfileViewModel() {
   const [perfil, setPerfil] = useState(null);

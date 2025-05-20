@@ -67,3 +67,25 @@ export const verificarCorreo = async (correo, codigo) => {
   if (!res.ok) throw new Error(data.message);
   return data;
 };
+
+export const loginAdmin = async (codigo) => {
+  const res = await fetch(`${BASE_URL}/admin/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ codigo }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const recuperarCodigoAdmin = async (correo) => {
+  const res = await fetch(`${BASE_URL}/solicitar-nuevo-codigo-admin`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ correo }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+}

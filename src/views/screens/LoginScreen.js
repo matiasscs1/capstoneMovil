@@ -78,7 +78,7 @@ export default function LoginScreen() {
         <Text style={styles.link}>¿Nuevo Usuario? Crea una cuenta</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate('LoginAdmin')}>
         <Text style={styles.link}>¿Administrador? Presione Aquí</Text>
       </TouchableOpacity>
 

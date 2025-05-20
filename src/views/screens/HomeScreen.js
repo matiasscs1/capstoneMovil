@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, Button, Image } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-import { getPerfil } from '../../models/usuario.model.js';
+import { getPerfil } from '../../models/auth.model.js';
 import { useNavigation } from '@react-navigation/native'; 
 
 export default function HomeScreen() {

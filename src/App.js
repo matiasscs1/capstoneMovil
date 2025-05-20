@@ -4,6 +4,7 @@ import LoginScreen from './views/screens/LoginScreen';
 import Verify2FAScreen from './views/screens/Verify2FAScreen';
 import RegisterScreen from './views/screens/RegisterScreen';
 import HomeScreen from './views/screens/HomeScreen';
+import LoginAdminScreen from './views/screens/LoginAdminScreen';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './views/screens/ProtectedRoute';
 import Toast from 'react-native-toast-message';
@@ -17,6 +18,7 @@ export default function App() {
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Verify2FA" component={Verify2FAScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
+          <Stack.Screen name="LoginAdmin" component={LoginAdminScreen} />
           <Stack.Screen name="Home">
             {() => (
               <ProtectedRoute>
