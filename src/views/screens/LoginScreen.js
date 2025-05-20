@@ -3,33 +3,51 @@ import {
   View,
   TextInput,
   Text,
-  Alert,
   TouchableOpacity,
   StyleSheet,
   Image,
 } from 'react-native';
 import { useAuthViewModel } from '../../viewmodels/AuthViewModel';
 import { useNavigation } from '@react-navigation/native';
+import Loader from '../components/Loader.js'; 
+import Toast from 'react-native-toast-message'; 
 
 export default function LoginScreen() {
-  const { correo, setCorreo, contrasenia, setContrasenia, login } = useAuthViewModel();
+  const {
+    correo,
+    setCorreo,
+    contrasenia,
+    setContrasenia,
+    login,
+    loading,
+  } = useAuthViewModel();
   const navigation = useNavigation();
 
   const handleLogin = async () => {
     try {
-      await login();
-      Alert.alert('✅', 'Código 2FA enviado al correo');
+      const res = await login();
+      Toast.show({
+        type: 'success',
+        text1: 'Código enviado',
+        text2: 'Revisa tu correo',
+      });
       navigation.navigate('Verify2FA', { correo });
     } catch (err) {
-      Alert.alert('❌ Error', err.message);
+      Toast.show({
+        type: 'error',
+        text1: 'Error al iniciar sesión',
+        text2: err.message,
+      });
     }
   };
 
   return (
     <View style={styles.container}>
+      <Loader visible={loading} /> 
+
       {/* LOGO */}
       <Image
-        source={require('../../../assets/logoterra.png')} // ajusta la ruta según tu proyecto
+        source={require('../../../assets/logoterra.png')}
         style={styles.logo}
       />
 
@@ -56,7 +74,7 @@ export default function LoginScreen() {
         <Text style={styles.buttonText}>Iniciar sesión</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate('Register')}>
         <Text style={styles.link}>¿Nuevo Usuario? Crea una cuenta</Text>
       </TouchableOpacity>
 
@@ -71,6 +89,7 @@ export default function LoginScreen() {
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
     padding: 30,
@@ -79,8 +98,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    width: 100,
-    height: 100,
+    
+    width: 120,
+    height: 120,
     resizeMode: 'contain',
     alignSelf: 'center',
     marginBottom: 80,
@@ -89,7 +109,7 @@ const styles = StyleSheet.create({
     height: 50,
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 8,
+    borderRadius: 20,
     paddingHorizontal: 12,
     marginBottom: 30,
     backgroundColor: '#f9f9f9',

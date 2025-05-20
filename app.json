@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "capstoneMovil",
-    "slug": "capstoneMovil",
+    "name": "Terranova Connect",
+    "slug": "Terranova Connect",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logoterra.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {

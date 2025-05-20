@@ -1,11 +1,17 @@
 import { useState } from 'react';
-import { loginUser, verify2FACode } from '../models/usuario.model.js';
+import {
+  loginUser,
+  verify2FACode,
+  registerTemp,
+  verificarCorreo,
+} from '../models/usuario.model.js';
 
 export const useAuthViewModel = () => {
   const [correo, setCorreo] = useState('');
   const [contrasenia, setContrasenia] = useState('');
   const [codigo, setCodigo] = useState('');
   const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const login = async () => {
     setLoading(true);
@@ -25,6 +31,29 @@ export const useAuthViewModel = () => {
     }
   };
 
+  const registrarTemporal = async (formData) => {
+    setLoading(true);
+    try {
+      const data = await registerTemp(formData);
+      setModalVisible(true);
+      return data;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verificarCodigoRegistro = async () => {
+    setLoading(true);
+    try {
+
+      const data = await verificarCorreo(correo, codigo);
+      setModalVisible(false);
+      return data;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     correo,
     setCorreo,
@@ -35,5 +64,9 @@ export const useAuthViewModel = () => {
     login,
     verify,
     loading,
+    modalVisible,
+    setModalVisible,
+    registrarTemporal,
+    verificarCodigoRegistro,
   };
 };

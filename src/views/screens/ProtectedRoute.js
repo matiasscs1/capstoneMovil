@@ -1,9 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigation } from '@react-navigation/native';
 
-export default function ProtectedRoute({ children, navigation }) {
+export default function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigation.replace('Login');
+    }
+  }, [loading, user, navigation]);
 
   if (loading) {
     return (
@@ -13,10 +21,7 @@ export default function ProtectedRoute({ children, navigation }) {
     );
   }
 
-  if (!user) {
-    navigation.replace('Login');
-    return null;
-  }
+  if (!user) return null;
 
   return children;
 }

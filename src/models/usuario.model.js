@@ -28,6 +28,8 @@ export const verify2FACode = async (correo, codigo) => {
 
 
 
+
+
 export const getPerfil = async () => {
   const token = await getAuthToken();
 
@@ -39,6 +41,28 @@ export const getPerfil = async () => {
     },
   });
 
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const registerTemp = async (formData) => {
+  const res = await fetch(`${BASE_URL}/register-temp`, {
+    method: 'POST',
+    body: formData,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+
+export const verificarCorreo = async (correo, codigo) => {
+  const res = await fetch(`${BASE_URL}/verify-email`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ correo, codigo }),
+  });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message);
   return data;

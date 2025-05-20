@@ -12,7 +12,6 @@ export default function Verify2FAScreen() {
 
   const handleVerify = async () => {
     try {
-      console.log('Correo:', correo);
       const { usuario } = await verify(correo);
       await loginWith2FA(usuario);
       navigation.replace('Home');
