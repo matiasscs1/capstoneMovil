@@ -272,7 +272,10 @@ const Section = ({
   );
 };
 
-const ModalForm = ({ visible, onClose, onSubmit, title, fields, formData, setFormData, loading, modalType }) => {
+const ModalForm = ({
+  visible, onClose, onSubmit, title, fields,
+  formData, setFormData, loading, modalType, currentEditId
+}) => {
   const [imageUri, setImageUri] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(null);
 
@@ -847,7 +850,6 @@ export default function AdminScreen() {
           onEdit={(item) => handleOpenEditModal('insignia', item)}
           onDelete={onDeleteInsignia}
         />
-
       </ScrollView>
 
       <ModalForm
@@ -860,6 +862,7 @@ export default function AdminScreen() {
         setFormData={setFormData}
         loading={loading}
         modalType={modalType}
+        currentEditId={currentEditId}  
       />
     </View>
   );
