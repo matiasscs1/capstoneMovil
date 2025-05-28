@@ -16,7 +16,8 @@ export default function ProtectedRoute({ children }) {
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator />
+        <ActivityIndicator size="large" color="#f57c00" />
+
       </View>
     );
   }

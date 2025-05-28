@@ -25,5 +25,8 @@
 - expo install @react-native-community/datetimepicker expo-image-picker
 - npx expo install react-native-toast-message
 
+- npx expo install @react-navigation/bottom-tabs react-native-screens react-native-safe-area-context react-native-gesture-handler
 
 
+-npm install react-native-vector-icons
+- npm install react-native-modal

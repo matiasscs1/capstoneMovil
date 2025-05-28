@@ -2,17 +2,18 @@ import React, { useEffect } from 'react';
 import { View, Text, Button, Image } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { getPerfil } from '../../models/auth.model.js';
-import { useNavigation } from '@react-navigation/native'; 
+import { useNavigation } from '@react-navigation/native';
+
 
 export default function HomeScreen() {
   const { user, logout } = useAuth();
-  const navigation = useNavigation(); 
+  const navigation = useNavigation();
 
   useEffect(() => {
     getPerfil().then((data) => console.log('Perfil:', data));
   }, []);
 
-  if (!user) return null; 
+  if (!user) return null;
 
   return (
     <View style={{ padding: 20 }}>

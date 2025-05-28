@@ -89,3 +89,4 @@ export const recuperarCodigoAdmin = async (correo) => {
   if (!res.ok) throw new Error(data.message);
   return data;
 }
+

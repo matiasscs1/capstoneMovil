@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { styles } from '../../styles/RegisterScreen.style.js';
 import {
   View,
   Text,
@@ -11,6 +12,7 @@ import {
   ScrollView,
   Platform,
   Modal,
+  FlatList,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
@@ -18,6 +20,7 @@ import { useAuthViewModel } from '../../viewmodels/AuthViewModel';
 import Toast from 'react-native-toast-message';
 import Loader from '../components/Loader.js';
 
+const roles = ['estudiante', 'representante'];
 
 export default function RegisterScreen({ navigation }) {
   const {
@@ -36,9 +39,13 @@ export default function RegisterScreen({ navigation }) {
 
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
+  const [rol, setRol] = useState('');
   const [fechaNacimiento, setFechaNacimiento] = useState(new Date());
   const [mostrarPicker, setMostrarPicker] = useState(false);
   const [foto_perfil, setfoto_perfil] = useState(null);
+
+  // Estado para controlar el modal del selector de rol
+  const [modalRolVisible, setModalRolVisible] = useState(false);
 
   const handleSelectPhoto = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -69,7 +76,7 @@ export default function RegisterScreen({ navigation }) {
   const validarCorreo = (correo) => correo.includes('@') && correo.includes('.');
 
   const handleRegister = async () => {
-    if (!nombre || !apellido || !correo || !fechaNacimiento || !contrasenia || !foto_perfil) {
+    if (!nombre || !apellido || !correo || !fechaNacimiento || !contrasenia || !rol || !foto_perfil) {
       return Alert.alert('Faltan campos', 'Completa todos los campos.');
     }
 
@@ -82,6 +89,7 @@ export default function RegisterScreen({ navigation }) {
     formData.append('apellido', apellido);
     formData.append('correo', correo);
     formData.append('contrasenia', contrasenia);
+    formData.append('rol', rol); // <-- Aquí se agrega el rol seleccionado
     formData.append('fecha_nacimiento', fechaNacimiento.toISOString());
     formData.append('foto_perfil', {
       uri: foto_perfil,
@@ -165,6 +173,40 @@ export default function RegisterScreen({ navigation }) {
           autoCapitalize="none"
         />
 
+        {/* Selector de rol */}
+        <TouchableOpacity
+          style={[styles.input, { justifyContent: 'center' }]}
+          onPress={() => setModalRolVisible(true)}
+        >
+          <Text style={{ color: rol ? '#000' : '#aaa' }}>{rol || 'Seleccione un rol'}</Text>
+        </TouchableOpacity>
+
+        <Modal visible={modalRolVisible} transparent animationType="fade">
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            onPress={() => setModalRolVisible(false)}
+            activeOpacity={1}
+          >
+            <View style={styles.modalRolContent}>
+              <FlatList
+                data={roles}
+                keyExtractor={(item) => item}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.rolOption}
+                    onPress={() => {
+                      setRol(item);
+                      setModalRolVisible(false);
+                    }}
+                  >
+                    <Text style={styles.rolOptionText}>{item}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+            </View>
+          </TouchableOpacity>
+        </Modal>
+
         <TouchableOpacity style={styles.input} onPress={() => setMostrarPicker(true)}>
           <Text style={{ color: '#000' }}>{formatFecha(fechaNacimiento)}</Text>
         </TouchableOpacity>
@@ -225,76 +267,4 @@ export default function RegisterScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 24,
-    paddingTop: 40,
-  },
-  avatarPlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#e0e0e0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 25,
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: 25,
-  },
-  plus: {
-    fontSize: 36,
-    color: '#1e3a8a',
-  },
-  input: {
-    width: '100%',
-    height: 48,
-    borderRadius: 25,
-    backgroundColor: '#f0f0f0',
-    paddingHorizontal: 20,
-    marginBottom: 14,
-    justifyContent: 'center',
-  },
-  button: {
-    backgroundColor: '#f57c00',
-    borderRadius: 25,
-    paddingVertical: 14,
-    paddingHorizontal: 60,
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  loginLink: {
-    color: '#1e3a8a',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  modalBackground: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: '#000000aa',
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 18,
-    color: '#f57c00',
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-});
+
