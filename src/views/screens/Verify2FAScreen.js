@@ -22,8 +22,7 @@ export default function Verify2FAScreen() {
       // Guarda el usuario y token en contexto y AsyncStorage
       await loginWith2FA(usuario, usuario.token);
 
-      // Navega a pantalla protegida Home
-      navigation.replace('Home');
+      navigation.replace('Usuario');
     } catch (err) {
       Alert.alert('❌', err.message);
     }
@@ -52,7 +51,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFF',
-    padding: 20,
+    padding: 80,
     justifyContent: 'flex-start',
   },
   title: {

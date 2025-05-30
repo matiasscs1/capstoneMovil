@@ -5,7 +5,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff',
     padding: 24,
-    paddingTop: 40,
+    paddingTop: 100,
   },
   avatarPlaceholder: {
     width: 100,
