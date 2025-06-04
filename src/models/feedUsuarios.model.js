@@ -1,4 +1,4 @@
-const BASE_URL = 'https://kong-7df170cea7usbksss.kongcloud.dev'; 
+const BASE_URL = 'https://kong-7df170cea7usbksss.kongcloud.dev';
 
 // Función genérica para obtener token, adapta según tu implementación
 import { getAuthToken } from './tokenService';
@@ -130,13 +130,32 @@ export const crearComentario = async (publicacionId, texto) => {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ texto }),
+    body: JSON.stringify({
+      texto,
+      publicacionId,
+    }),
   });
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Error al crear comentario');
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    data = {};
+  }
+
+  if (!res.ok && data.error) {
+    // Lanza el mensaje del backend
+    throw new Error(data.error);
+  }
+
+  if (!res.ok) {
+    throw new Error(data.message || 'No se pudo crear el comentario');
+  }
+
   return data;
 };
+
+
 
 export const listarComentarios = async (publicacionId) => {
   const token = await getAuthToken();
@@ -165,10 +184,21 @@ export const editarComentario = async (id_comentario, texto) => {
     body: JSON.stringify({ texto }),
   });
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Error al editar comentario');
+  let data = {};
+  try {
+    data = await res.json();
+  } catch {
+    data = {};
+  }
+
+  if (!res.ok) {
+    // Da prioridad a data.error (backend personalizado), luego message, luego texto genérico
+    throw new Error(data.error || data.message || 'Error al editar comentario');
+  }
+
   return data;
 };
+
 
 export const eliminarComentario = async (id_comentario) => {
   const token = await getAuthToken();

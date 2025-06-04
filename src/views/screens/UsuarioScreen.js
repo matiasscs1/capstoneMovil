@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Modal, TouchableOpacity, Text } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-import InicioScreen from './InicioScreen.js';
-import CalendarioScreen from './CalendarioScreen.js';
-import TerranovaFeedScreen from './FeedUsuarioScreen.js';
-import EstadisticasScreen from './EstadisticasScreen.js';
-import Loader from '../components/Loader.js';
+import InicioScreen from './InicioScreen'; // Participar
+import CalendarioScreen from './CalendarioScreen';
+import EstadisticasScreen from './EstadisticasScreen';
+import TerranovaFeedScreen from './FeedUsuarioScreen';
+import Loader from '../components/Loader';
 import CustomHeader from '../components/CustomHeader';
 
 const Tab = createBottomTabNavigator();
@@ -21,57 +21,30 @@ function MainTabs({ setCurrentTitle }) {
         headerShown: false,
         tabBarActiveTintColor: '#1e3a8a',
         tabBarInactiveTintColor: '#f57c00',
-        tabBarStyle: {
-          backgroundColor: 'white',
-          borderTopColor: '#ccc',
-        },
-        tabBarLabelStyle: {
-          fontWeight: 'bold',
-          fontSize: 12,
-        },
+        tabBarStyle: { backgroundColor: 'white', borderTopColor: '#ccc' },
+        tabBarLabelStyle: { fontWeight: 'bold', fontSize: 12 },
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
 
-          if (route.name === 'Inicio') {
-            iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'Publicaciones') {
-            iconName = focused ? 'post' : 'post-outline';
-          } else if (route.name === 'Calendario') {
-            iconName = focused ? 'calendar-month' : 'calendar-month-outline';
-          } else if (route.name === 'Estadísticas') {
-            iconName = focused ? 'chart-bar' : 'chart-bar';
-          }
+          if (route.name === 'Inicio') iconName = focused ? 'home' : 'home-outline';
+          if (route.name === 'Publicaciones') iconName = focused ? 'post' : 'post-outline';
+          if (route.name === 'Calendario') iconName = focused ? 'calendar-month' : 'calendar-month-outline';
+          if (route.name === 'Estadísticas') iconName = focused ? 'chart-bar' : 'chart-bar';
 
           return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
         },
       })}
     >
-      <Tab.Screen
-        name="Inicio"
-        children={() => <InicioScreen setCurrentTitle={setCurrentTitle} />}
-        options={{ title: 'Inicio' }}
-      />
-      <Tab.Screen
-        name="Publicaciones"
-        children={() => <TerranovaFeedScreen setCurrentTitle={setCurrentTitle} />}
-        options={{ title: 'Publicaciones' }}
-      />
-      <Tab.Screen
-        name="Calendario"
-        children={() => <CalendarioScreen setCurrentTitle={setCurrentTitle} />}
-        options={{ title: 'Calendario' }}
-      />
-      <Tab.Screen
-        name="Estadísticas"
-        children={() => <EstadisticasScreen setCurrentTitle={setCurrentTitle} />}
-        options={{ title: 'Estadísticas' }}
-      />
+      <Tab.Screen name="Publicaciones" component={TerranovaFeedScreen} />
+      <Tab.Screen name="Inicio" component={InicioScreen} />
+      <Tab.Screen name="Calendario" component={CalendarioScreen} />
+      <Tab.Screen name="Estadísticas" component={EstadisticasScreen} />
     </Tab.Navigator>
   );
 }
 
 export default function UsuarioScreen() {
-  const navigation = useNavigation(); // <-- aquí obtenemos navigation con el hook
+  const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [currentTitle, setCurrentTitle] = useState('Terranova');
@@ -83,7 +56,7 @@ export default function UsuarioScreen() {
 
   const handleConfiguracion = () => {
     setMenuVisible(false);
-    navigation.navigate('Configuracion');
+    navigation.navigate('Recompensas');
   };
 
   const handleCerrarSesion = async () => {
@@ -92,10 +65,7 @@ export default function UsuarioScreen() {
     try {
       await AsyncStorage.removeItem('token'); // Cambia 'token' por tu key real
       setLoading(false);
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Login' }],
-      });
+      navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
     } catch (error) {
       setLoading(false);
       console.error('Error al cerrar sesión', error);
@@ -103,34 +73,19 @@ export default function UsuarioScreen() {
   };
 
   const UserMenuModal = () => (
-    <Modal
-      visible={menuVisible}
-      transparent
-      animationType="fade"
-      onRequestClose={() => setMenuVisible(false)}
-    >
-      <TouchableOpacity
-        style={styles.modalOverlay}
-        onPress={() => setMenuVisible(false)}
-        activeOpacity={1}
-      >
+    <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={() => setMenuVisible(false)}>
+      <TouchableOpacity style={styles.modalOverlay} onPress={() => setMenuVisible(false)} activeOpacity={1}>
         <View style={styles.menuContainer}>
           <TouchableOpacity style={styles.menuItemContainer} onPress={handlePerfil}>
             <MaterialCommunityIcons name="account" size={24} color="#1e3a8a" />
             <Text style={styles.menuItem}>Mi Perfil</Text>
           </TouchableOpacity>
-
           <TouchableOpacity style={styles.menuItemContainer} onPress={handleConfiguracion}>
             <MaterialCommunityIcons name="cog" size={24} color="#1e3a8a" />
-            <Text style={styles.menuItem}>Recompensa</Text>
+            <Text style={styles.menuItem}>Recompensas</Text>
           </TouchableOpacity>
-
           <View style={styles.separator} />
-
-          <TouchableOpacity
-            style={[styles.menuItemContainer, styles.logoutContainer]}
-            onPress={handleCerrarSesion}
-          >
+          <TouchableOpacity style={[styles.menuItemContainer, styles.logoutContainer]} onPress={handleCerrarSesion}>
             <MaterialCommunityIcons name="logout" size={24} color="#ef4444" />
             <Text style={[styles.menuItem, styles.logoutText]}>Cerrar Sesión</Text>
           </TouchableOpacity>
@@ -139,18 +94,27 @@ export default function UsuarioScreen() {
     </Modal>
   );
 
+  // Agregar un listener para cargar la pantalla al hacer clic
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      setCurrentTitle('Participar');
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
   return (
     <View style={styles.container}>
       <Loader visible={loading} />
-
       <CustomHeader title={currentTitle} onMenuPress={() => setMenuVisible(true)} />
-
       <MainTabs setCurrentTitle={setCurrentTitle} />
-
       <UserMenuModal />
     </View>
   );
 }
+
+
+
 
 const styles = StyleSheet.create({
   container: {

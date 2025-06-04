@@ -133,20 +133,21 @@ const crear = async (descripcionParam, archivosParam) => {
     }
   };
 
-  // Crear comentario
-  const crearComent = async (publicacionId, texto) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const nuevo = await crearComentario(publicacionId, texto);
-      return nuevo;
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+const crearComent = async (publicacionId, texto) => {
+  setLoading(true);
+  setError(null);
+  try {
+    const response = await crearComentario(publicacionId, texto);
+    return response;
+  } catch (err) {
+    setError(err.message);
+    throw err; 
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
   // Listar comentarios de publicación
   const cargarComentarios = async (publicacionId) => {

@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Terranova Connect",
-    "slug": "Terranova Connect",
+    "slug": "Terranova-Connect",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/logoterra.png",
@@ -20,10 +20,16 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.matias490.TerranovaConnect"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "91ac70be-3394-4b53-b0f0-bf7912a9140b"
+      }
     }
   }
 }

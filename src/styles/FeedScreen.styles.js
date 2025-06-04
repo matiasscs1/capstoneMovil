@@ -1,0 +1,250 @@
+
+
+import { StyleSheet } from 'react-native';
+
+export const styles = StyleSheet.create({
+  card: {
+    backgroundColor: 'white',
+    marginHorizontal: 10,
+    marginTop: 15,
+    borderRadius: 10,
+    overflow: 'hidden',
+    elevation: 3,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#ddd',
+  },
+  headerTextContainer: {
+    marginLeft: 10,
+  },
+  nombreAutor: {
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  fechaHeader: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
+  },
+  imagenPublicacion: {
+    width: '100%',
+    height: 300,
+    backgroundColor: '#eee',
+  },
+  descripcion: {
+    padding: 10,
+    fontSize: 14,
+    color: '#333',
+  },
+  interaccionesRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 10,
+    paddingBottom: 10,
+    alignItems: 'center',
+  },
+  likeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  iconoCorazon: {
+    fontSize: 20,
+    color: '#999',
+    marginRight: 5,
+  },
+  corazonRojo: {
+    color: 'red',
+  },
+  likesCount: {
+    fontSize: 14,
+    color: '#333',
+  },
+  comentariosButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconoComentario: {
+    fontSize: 20,
+    color: '#999',
+    marginRight: 5,
+  },
+  comentariosCount: {
+    fontSize: 14,
+    color: '#333',
+  },
+  modalWrapper: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
+    paddingHorizontal: 15,
+    paddingTop: 10,
+    paddingBottom: 50,
+    marginBottom: 0,
+  },
+  titulo: {
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  cerrarBtn: {
+    position: 'absolute',
+    right: 15,
+    top: 12,
+  },
+  comentarioContainer: {
+    marginBottom: 20,
+  },
+  nombreComentario: {
+    fontWeight: 'bold',
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  textoComentario: {
+    fontSize: 14,
+    color: '#222',
+  },
+  listaComentarios: {
+    flexGrow: 1,
+    marginTop: 10,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopColor: '#eee',
+    borderTopWidth: 1,
+    paddingTop: 20,
+    marginTop: 10,
+  },
+  input: {
+    flex: 1,
+    maxHeight: 80,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    fontSize: 14,
+    color: '#222',
+  },
+  botonEnviar: {
+    backgroundColor: '#f57c00',
+    padding: 10,
+    borderRadius: 25,
+    marginLeft: 8,
+  },
+  botonEnviarDisabled: {
+    backgroundColor: '#f57c00aa',
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 15,
+    right: 10,
+    backgroundColor: '#f57c00',
+    width: 65,
+    height: 65,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
+  cameraIcon: {
+    width: 28,
+    height: 20,
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cameraBody: {
+    width: 24,
+    height: 18,
+    borderWidth: 2,
+    borderColor: 'white',
+    borderRadius: 3,
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cameraLens: {
+    width: 8,
+    height: 8,
+    backgroundColor: 'white',
+    borderRadius: 4,
+  },
+  cameraFlash: {
+    position: 'absolute',
+    top: 3,
+    left: 4,
+    width: 6,
+    height: 4,
+    borderRadius: 1,
+    backgroundColor: 'white',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    marginTop: 100,
+  },
+  botonFoto: {
+    backgroundColor: '#f57c00',
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  botonFotoTexto: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  previsualizacionFoto: {
+    width: '100%',
+    height: 150,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  botonesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  boton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  botonCancelar: {
+    backgroundColor: '#ccc',
+    marginRight: 10,
+  },
+  botonPublicar: {
+    backgroundColor: '#f57c00',
+  },
+  botonTexto: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  
+});
