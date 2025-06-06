@@ -26,7 +26,7 @@ function MainTabs({ setCurrentTitle }) {
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
 
-          if (route.name === 'Inicio') iconName = focused ? 'home' : 'home-outline';
+          if (route.name === 'Participar')iconName = focused ? 'gift' : 'gift-outline';
           if (route.name === 'Publicaciones') iconName = focused ? 'post' : 'post-outline';
           if (route.name === 'Calendario') iconName = focused ? 'calendar-month' : 'calendar-month-outline';
           if (route.name === 'Estadísticas') iconName = focused ? 'chart-bar' : 'chart-bar';
@@ -36,7 +36,7 @@ function MainTabs({ setCurrentTitle }) {
       })}
     >
       <Tab.Screen name="Publicaciones" component={TerranovaFeedScreen} />
-      <Tab.Screen name="Inicio" component={InicioScreen} />
+      <Tab.Screen name="Participar" component={InicioScreen} />
       <Tab.Screen name="Calendario" component={CalendarioScreen} />
       <Tab.Screen name="Estadísticas" component={EstadisticasScreen} />
     </Tab.Navigator>

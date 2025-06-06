@@ -83,6 +83,7 @@ export const useAdminConfViewModel = () => {
     setError(null);
     try {
       const data = await verRecompensas();
+      
       setRecompensas(data);
       return data;
     } catch (e) {

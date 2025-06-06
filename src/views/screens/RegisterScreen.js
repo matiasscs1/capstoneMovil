@@ -4,7 +4,6 @@ import {
   View,
   Text,
   TextInput,
-  StyleSheet,
   TouchableOpacity,
   Image,
   Alert,
@@ -20,7 +19,7 @@ import { useAuthViewModel } from '../../viewmodels/AuthViewModel';
 import Toast from 'react-native-toast-message';
 import Loader from '../components/Loader.js';
 
-const roles = ['estudiante', 'representante'];
+const roles = ['estudiante', 'representante', 'profesor'];
 
 export default function RegisterScreen({ navigation }) {
   const {
@@ -76,7 +75,15 @@ export default function RegisterScreen({ navigation }) {
   const validarCorreo = (correo) => correo.includes('@') && correo.includes('.');
 
   const handleRegister = async () => {
-    if (!nombre || !apellido || !correo || !fechaNacimiento || !contrasenia || !rol || !foto_perfil) {
+    if (
+      !nombre ||
+      !apellido ||
+      !correo ||
+      !fechaNacimiento ||
+      !contrasenia ||
+      !rol ||
+      !foto_perfil
+    ) {
       return Alert.alert('Faltan campos', 'Completa todos los campos.');
     }
 
@@ -89,7 +96,7 @@ export default function RegisterScreen({ navigation }) {
     formData.append('apellido', apellido);
     formData.append('correo', correo);
     formData.append('contrasenia', contrasenia);
-    formData.append('rol', rol); // <-- Aquí se agrega el rol seleccionado
+    formData.append('rol', rol);
     formData.append('fecha_nacimiento', fechaNacimiento.toISOString());
     formData.append('foto_perfil', {
       uri: foto_perfil,
@@ -134,11 +141,15 @@ export default function RegisterScreen({ navigation }) {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: '#fff' }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <Loader visible={loading} />
 
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
         <TouchableOpacity onPress={handleSelectPhoto}>
           {foto_perfil ? (
             <Image source={{ uri: foto_perfil }} style={styles.avatar} />
@@ -178,7 +189,9 @@ export default function RegisterScreen({ navigation }) {
           style={[styles.input, { justifyContent: 'center' }]}
           onPress={() => setModalRolVisible(true)}
         >
-          <Text style={{ color: rol ? '#000' : '#aaa' }}>{rol || 'Seleccione un rol'}</Text>
+          <Text style={{ color: rol ? '#000' : '#aaa' }}>
+            {rol || 'Seleccione un rol'}
+          </Text>
         </TouchableOpacity>
 
         <Modal visible={modalRolVisible} transparent animationType="fade">
@@ -207,7 +220,10 @@ export default function RegisterScreen({ navigation }) {
           </TouchableOpacity>
         </Modal>
 
-        <TouchableOpacity style={styles.input} onPress={() => setMostrarPicker(true)}>
+        <TouchableOpacity
+          style={styles.input}
+          onPress={() => setMostrarPicker(true)}
+        >
           <Text style={{ color: '#000' }}>{formatFecha(fechaNacimiento)}</Text>
         </TouchableOpacity>
 
@@ -245,7 +261,9 @@ export default function RegisterScreen({ navigation }) {
       <Modal visible={modalVisible} transparent animationType="fade">
         <View style={styles.modalBackground}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Ingresa el código enviado al correo</Text>
+            <Text style={styles.modalTitle}>
+              Ingresa el código enviado al correo
+            </Text>
             <TextInput
               style={styles.input}
               placeholder="Código"
@@ -266,5 +284,3 @@ export default function RegisterScreen({ navigation }) {
     </KeyboardAvoidingView>
   );
 }
-
-
