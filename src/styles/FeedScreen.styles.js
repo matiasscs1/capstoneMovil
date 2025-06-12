@@ -1,8 +1,7 @@
-
-
 import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
+  // ... (todos tus estilos existentes van aquí) ...
   card: {
     backgroundColor: 'white',
     marginHorizontal: 10,
@@ -246,5 +245,68 @@ export const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
-  
+
+  // --- NUEVOS ESTILOS PARA EL MODAL DE EDICIÓN ---
+  editModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  editModalContent: {
+    width: "100%",
+    backgroundColor: "#ffffff",
+    borderRadius: 15,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  editModalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
+    textAlign: "center",
+    color: '#333',
+  },
+  editModalInput: {
+    borderWidth: 1,
+    borderColor: "#dbdbdb",
+    borderRadius: 8,
+    padding: 10,
+    minHeight: 80,
+    textAlignVertical: "top",
+    fontSize: 14,
+    marginBottom: 20,
+    backgroundColor: '#f9f9f9',
+  },
+  editModalButtonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  editModalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  cancelButton: {
+    backgroundColor: "#e0e0e0",
+    marginRight: 10,
+  },
+  saveButton: {
+    backgroundColor: "#f57c00",
+  },
+  editModalButtonText: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  saveButtonLoading: {
+    backgroundColor: '#d97706', 
+    opacity: 0.8,
+  },
 });

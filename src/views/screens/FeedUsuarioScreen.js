@@ -13,6 +13,7 @@ import {
   Keyboard,
   ScrollView,
   Dimensions,
+  ActivityIndicator, // --- CAMBIO: Asegúrate de que ActivityIndicator esté importado ---
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { styles } from '../../styles/FeedScreen.styles.js';
@@ -54,9 +55,14 @@ export default function Feed() {
   const [comentarioError, setComentarioError] = useState(null);
   const { user } = useAuth();
 
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingComment, setEditingComment] = useState(null);
+  const [editedCommentText, setEditedCommentText] = useState('');
+  // --- CAMBIO: Nuevo estado para el botón de guardar ---
+  const [isSavingComment, setIsSavingComment] = useState(false);
+
   const currentUserId = user?.id;
 
-  // === Solicita permisos de galería una sola vez ===
   useEffect(() => {
     (async () => {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -70,7 +76,6 @@ export default function Feed() {
     cargarPublicaciones();
   }, []);
 
-  // === Enriquecer publicaciones con info de autor ===
   useEffect(() => {
     const cargarAutores = async () => {
       if (!publicaciones || publicaciones.length === 0) {
@@ -101,7 +106,6 @@ export default function Feed() {
     cargarAutores();
   }, [publicaciones]);
 
-  // === Listener de teclado para mover input ===
   useEffect(() => {
     const showListener = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
     const hideListener = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
@@ -115,7 +119,6 @@ export default function Feed() {
     return <Loader visible={true} />;
   }
 
-  // === MODAL DE COMENTARIOS ===
   const abrirModalComentarios = async (publicacion) => {
     setPublicacionSeleccionada(publicacion);
     try {
@@ -136,23 +139,17 @@ export default function Feed() {
     setComentarioError(null);
   };
 
-  // === LIKES ===
   const manejarLike = async (publicacion) => {
-    // Aquí asumes que currentUserId está definido como tu id de usuario logueado
     const id_publicacion = publicacion.id_publicacion || publicacion._id;
     try {
-      // Actualización local optimista
       setPublicacionesConAutor((prev) =>
         prev.map((item) => {
           if ((item.id_publicacion || item._id) === id_publicacion) {
-            // ¿El usuario ya dio like?
             const yaDioLike = item.likes?.includes(currentUserId);
             let newLikes;
             if (yaDioLike) {
-              // Quitar like
               newLikes = item.likes.filter((id) => id !== currentUserId);
             } else {
-              // Dar like
               newLikes = [...(item.likes || []), currentUserId];
             }
             return { ...item, likes: newLikes };
@@ -160,19 +157,13 @@ export default function Feed() {
           return item;
         })
       );
-      // Luego, sincronizas con el backend
       await toggleLike(id_publicacion);
-      // (opcional) Si quieres volver a cargar desde el backend por si acaso:
-      // await cargarPublicaciones();
     } catch (err) {
       Alert.alert('Error', 'No se pudo actualizar el like');
-      // (opcional) podrías revertir el cambio local si falla
       await cargarPublicaciones();
     }
   };
 
-
-  // === FORMATEO FECHA ===
   const formatearFechaLegible = (fechaString) => {
     if (!fechaString) return '';
     const fecha = new Date(fechaString);
@@ -189,7 +180,6 @@ export default function Feed() {
     return `${fechaFormateada} a las ${hora}:${minutos}`;
   };
 
-  // === MODAL NUEVA PUBLICACIÓN ===
   const abrirModal = () => setModalVisible(true);
   const cerrarModal = () => {
     setDescripcionNueva('');
@@ -247,7 +237,6 @@ export default function Feed() {
     }
   };
 
-  // === COMENTARIOS: enviar, editar, eliminar ===
   const enviarComentario = async () => {
     if (!nuevoComentario.trim()) return;
     if (!publicacionSeleccionada?.id_publicacion) {
@@ -262,7 +251,6 @@ export default function Feed() {
         publicacionSeleccionada.id_publicacion,
         nuevoComentario.trim()
       );
-      // Checa aquí si viene un error en el body
       if (response && response.error) {
         Alert.alert('Contenido inapropiado', response.error);
         return;
@@ -272,7 +260,6 @@ export default function Feed() {
       setNuevoComentario('');
       inputComentarioRef.current?.blur();
     } catch (err) {
-      // Aquí sigue con el catch por si acaso hay un error de red
       if (
         (err.response && err.response.status === 400) ||
         (err.status === 400)
@@ -288,56 +275,50 @@ export default function Feed() {
     }
   };
 
+  const openEditModal = (comentario) => {
+    setEditingComment(comentario);
+    setEditedCommentText(comentario.texto);
+    setEditModalVisible(true);
+  };
 
+  const closeEditModal = () => {
+    setEditModalVisible(false);
+    setEditingComment(null);
+    setEditedCommentText('');
+  };
 
+  const handleSaveComment = async () => {
+    // --- CAMBIO: Evitar doble clic y validar texto ---
+    if (isSavingComment || !editedCommentText || !editedCommentText.trim()) return;
 
+    setIsSavingComment(true); // --- CAMBIO: Iniciar estado de carga ---
 
-  // EDITAR comentario
-  const handleEditarComentario = (comentario) => {
-  Alert.prompt(
-    "Editar comentario",
-    "",
-    [
-      {
-        text: "Cancelar",
-        style: "cancel"
-      },
-      {
-        text: "Guardar",
-        onPress: async (nuevoTexto) => {
-          if (!nuevoTexto || !nuevoTexto.trim()) return;
-          try {
-            const response = await editarComent(comentario.id_comentario, nuevoTexto.trim());
-            if (response && response.error) {
-              Alert.alert('Contenido inapropiado', response.error);
-              return;
-            }
-            const listaActualizada = await cargarComentarios(publicacionSeleccionada.id_publicacion);
-            setComentarios(listaActualizada || []);
-            Toast.show({ type: 'success', text1: 'Comentario editado' });
-          } catch (err) {
-            if (
-              (err.response && err.response.status === 400) ||
-              (err.status === 400)
-            ) {
-              Alert.alert('Contenido inapropiado', 'El contenido de tu comentario ha sido marcado como inapropiado.');
-            } else if (err.message) {
-              Alert.alert("Error", err.message || "No se pudo editar");
-            } else {
-              Alert.alert("Error", "No se pudo editar");
-            }
-          }
-        }
+    try {
+      const response = await editarComent(editingComment.id_comentario, editedCommentText.trim());
+      if (response && response.error) {
+        Alert.alert('Contenido inapropiado', response.error);
+        return;
       }
-    ],
-    "plain-text",
-    comentario.texto
-  );
-};
+      const listaActualizada = await cargarComentarios(publicacionSeleccionada.id_publicacion);
+      setComentarios(listaActualizada || []);
+      Toast.show({ type: 'success', text1: 'Comentario editado' });
+      closeEditModal();
+    } catch (err) {
+      if (
+        (err.response && err.response.status === 400) ||
+        (err.status === 400)
+      ) {
+        Alert.alert('Contenido inapropiado', 'El contenido de tu comentario ha sido marcado como inapropiado.');
+      } else if (err.message) {
+        Alert.alert("Error", err.message || "No se pudo editar");
+      } else {
+        Alert.alert("Error", "No se pudo editar");
+      }
+    } finally {
+      setIsSavingComment(false); // --- CAMBIO: Finalizar estado de carga siempre ---
+    }
+  };
 
-
-
-  // ELIMINAR comentario
   const handleEliminarComentario = (comentario) => {
     Alert.alert(
       "Eliminar comentario",
@@ -362,7 +343,6 @@ export default function Feed() {
     );
   };
 
-  // === RENDER ===
   return (
     <>
       <FlatList
@@ -438,11 +418,9 @@ export default function Feed() {
                       <Text style={styles.textoComentario}>{item.texto}</Text>
                     </View>
                     <View style={{ flexDirection: 'row', marginLeft: 8 }}>
-                      {/* Botón editar */}
-                      <TouchableOpacity onPress={() => handleEditarComentario(item)} style={{ padding: 6 }}>
+                      <TouchableOpacity onPress={() => openEditModal(item)} style={{ padding: 6 }}>
                         <Ionicons name="create-outline" size={18} color="#666" />
                       </TouchableOpacity>
-                      {/* Botón eliminar */}
                       <TouchableOpacity onPress={() => handleEliminarComentario(item)} style={{ padding: 6 }}>
                         <Ionicons name="trash-outline" size={18} color="#e53935" />
                       </TouchableOpacity>
@@ -490,7 +468,50 @@ export default function Feed() {
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* Botón flotante para crear publicación */}
+      {/* --- MODAL PARA EDITAR COMENTARIO --- */}
+      <Modal
+        visible={editModalVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={closeEditModal}
+      >
+        <View style={styles.editModalOverlay}>
+          <View style={styles.editModalContent}>
+            <Text style={styles.editModalTitle}>Editar Comentario</Text>
+            <TextInput
+              style={styles.editModalInput}
+              value={editedCommentText}
+              onChangeText={setEditedCommentText}
+              multiline
+            />
+            <View style={styles.editModalButtonContainer}>
+              <TouchableOpacity
+                style={[styles.editModalButton, styles.cancelButton]}
+                onPress={closeEditModal}
+                disabled={isSavingComment} // --- CAMBIO: Deshabilitar mientras se guarda ---
+              >
+                <Text style={styles.editModalButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.editModalButton,
+                  styles.saveButton,
+                  isSavingComment && styles.saveButtonLoading, // --- CAMBIO: Estilo de carga ---
+                ]}
+                onPress={handleSaveComment}
+                disabled={isSavingComment} // --- CAMBIO: Deshabilitar mientras se guarda ---
+              >
+                {isSavingComment ? ( // --- CAMBIO: Mostrar spinner o texto ---
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : (
+                  <Text style={[styles.editModalButtonText, { color: "#fff" }]}>Guardar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <TouchableOpacity style={styles.fab} onPress={abrirModal} activeOpacity={0.7}>
         <View style={styles.cameraIcon}>
           <View style={styles.cameraBody}>
@@ -500,7 +521,6 @@ export default function Feed() {
         </View>
       </TouchableOpacity>
 
-      {/* Modal para crear publicación */}
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={cerrarModal}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
