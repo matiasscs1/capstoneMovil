@@ -4,7 +4,7 @@ const BASE_URL = 'https://kong-7df170cea7usbksss.kongcloud.dev';
 
 export const obtenerInsignias = async () => {
   const token = await getAuthToken();
-  const res = await fetch(`${BASE_URL}/obtener`, {
+  const res = await fetch(`${BASE_URL}/insignias`, {
     method: 'GET',
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -15,6 +15,7 @@ export const obtenerInsignias = async () => {
 };
 
 export const reclamarInsignia = async (id_insignia) => {
+
   const token = await getAuthToken();
   const res = await fetch(`${BASE_URL}/reclamar`, {
     method: 'POST',
@@ -25,6 +26,7 @@ export const reclamarInsignia = async (id_insignia) => {
     body: JSON.stringify({ id_insignia }),
   });
   const data = await res.json();
+  
   if (!res.ok) throw new Error(data.message);
   return data;
 };

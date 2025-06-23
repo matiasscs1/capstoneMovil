@@ -61,7 +61,7 @@ export default function Feed() {
   // --- CAMBIO: Nuevo estado para el botón de guardar ---
   const [isSavingComment, setIsSavingComment] = useState(false);
 
-  const currentUserId = user?.id;
+  const currentUserId = user?.id_usuario;
 
   useEffect(() => {
     (async () => {

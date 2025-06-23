@@ -3,6 +3,7 @@ import {
     canjearRecompensa,
     obtenerRecompensasUsuario,
     verCanjesUsuarios,
+    verCanjesPorUsuario, 
 } from '../models/recompensas.model.js';
 
 export const useRecompensaViewModel = () => {
@@ -10,14 +11,15 @@ export const useRecompensaViewModel = () => {
     const [error, setError] = useState(null);
     const [recompensas, setRecompensas] = useState([]);
     const [canjes, setCanjes] = useState([]);
+    const [canjesUsuario, setCanjesUsuario] = useState([]); // Nuevo estado para canjes específicos del usuario
 
-    // Cargar recompensas del usuario
     const cargarRecompensas = async () => {
         setLoading(true);
         setError(null);
         try {
             const data = await obtenerRecompensasUsuario();
-            setRecompensas(data.recompensas || []); return data;
+            setRecompensas(data.recompensas || []);
+            return data;
         } catch (e) {
             setError(e.message);
             throw e;
@@ -26,7 +28,6 @@ export const useRecompensaViewModel = () => {
         }
     };
 
-    // Canjear una recompensa
     const canjear = async (recompensaId) => {
         setLoading(true);
         setError(null);
@@ -42,13 +43,13 @@ export const useRecompensaViewModel = () => {
         }
     };
 
-    // Ver canjes del usuario
     const cargarCanjes = async () => {
         setLoading(true);
         setError(null);
         try {
             const data = await verCanjesUsuarios();
             setCanjes(data);
+            console.log('Todos los canjes:', data);
             return data;
         } catch (e) {
             setError(e.message);
@@ -58,13 +59,48 @@ export const useRecompensaViewModel = () => {
         }
     };
 
+    const cargarCanjesPorUsuario = async (usuarioId) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await verCanjesPorUsuario(usuarioId);
+            setCanjesUsuario(data);
+            console.log('Canjes del usuario:', data);
+            return data;
+        } catch (e) {
+            setError(e.message);
+            throw e;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Limpiar canjes del usuario (función auxiliar)
+    const limpiarCanjesUsuario = () => {
+        setCanjesUsuario([]);
+    };
+
+    // Limpiar errores (función auxiliar)
+    const limpiarError = () => {
+        setError(null);
+    };
+
     return {
+        // Estados
         loading,
         error,
         recompensas,
         canjes,
+        canjesUsuario, // Nuevo estado
+
+        // Funciones
         cargarRecompensas,
         canjear,
         cargarCanjes,
+        cargarCanjesPorUsuario, // Nueva función
+        
+        // Funciones auxiliares
+        limpiarCanjesUsuario,
+        limpiarError,
     };
-}
+};

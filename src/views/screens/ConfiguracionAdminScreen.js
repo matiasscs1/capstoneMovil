@@ -28,7 +28,7 @@ const ListItemCard = ({ item, title, onEdit, onDelete }) => {
 
   let mainText = '';
   let subText = '';
-  let imageUrl = item.foto_perfil?.[0]?.url || item.imagen;
+  let imageUrl = item.foto_perfil?.[0]?.url || item.imagen || item.imagenes?.[0]?.url;
 
   switch (title) {
     case 'Usuarios':
@@ -208,6 +208,7 @@ const ModalForm = ({
 }) => {
   const [imageUri, setImageUri] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(null);
+  const [errors, setErrors] = useState({});
 
   React.useEffect(() => {
     if ((modalType === 'insignia' || modalType === 'recompensa') && formData.nuevaImagen?.uri) {
@@ -216,10 +217,77 @@ const ModalForm = ({
       setImageUri(formData.imagen);
     } else if (modalType === 'usuario' && formData.foto_perfil) {
       setImageUri(formData.foto_perfil[0]?.url || null);
+    } else if (modalType === 'insignia' && formData.imagenes?.[0]?.url) {
+      setImageUri(formData.imagenes[0].url);
     } else {
       setImageUri(null);
     }
   }, [formData, modalType]);
+
+  // Validaciones
+  const validateText = (text) => {
+    const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+    return regex.test(text);
+  };
+
+  const validateNumber = (number) => {
+    return !isNaN(number) && number >= 0;
+  };
+
+  const validateDate = (date, isEndDate = false, startDate = null) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(date);
+    
+    if (!isEndDate) {
+      // Fecha de inicio no puede ser anterior a hoy
+      return selectedDate >= today;
+    } else {
+      // Fecha de fin no puede ser anterior a fecha de inicio
+      if (startDate) {
+        const start = new Date(startDate);
+        return selectedDate >= start;
+      }
+      return selectedDate >= today;
+    }
+  };
+
+  const handleTextChange = (key, value) => {
+    if (key === 'nombre' || key === 'apellido' || key === 'titulo') {
+      if (value === '' || validateText(value)) {
+        setFormData({ ...formData, [key]: value });
+        setErrors({ ...errors, [key]: null });
+      } else {
+        setErrors({ ...errors, [key]: 'Solo se permiten letras' });
+      }
+    } else {
+      setFormData({ ...formData, [key]: value });
+    }
+  };
+
+  const handleNumberChange = (key, value) => {
+    if (value === '' || (validateNumber(parseFloat(value)) && parseFloat(value) >= 0)) {
+      setFormData({ ...formData, [key]: value });
+      setErrors({ ...errors, [key]: null });
+    } else {
+      setErrors({ ...errors, [key]: 'Solo números positivos' });
+    }
+  };
+
+  const handleDateChange = (key, value, isEndDate = false) => {
+    const startDateKey = key === 'fechaFin' ? 'fechaInicio' : null;
+    const startDate = startDateKey ? formData[startDateKey] : null;
+    
+    if (validateDate(value, isEndDate, startDate)) {
+      setFormData({ ...formData, [key]: value });
+      setErrors({ ...errors, [key]: null });
+    } else {
+      const errorMsg = isEndDate 
+        ? 'La fecha de fin debe ser posterior a la fecha de inicio'
+        : 'La fecha no puede ser anterior a hoy';
+      setErrors({ ...errors, [key]: errorMsg });
+    }
+  };
 
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -234,28 +302,39 @@ const ModalForm = ({
       quality: 0.8,
     });
     if (!result.canceled) {
+      const imageData = {
+        uri: result.assets[0].uri,
+        name: result.assets[0].fileName || 'imagen.jpg',
+        type: result.assets[0].mimeType || 'image/jpeg',
+      };
       setFormData({
         ...formData,
-        nuevaImagen: {
-          uri: result.assets[0].uri,
-          name: 'imagen.jpg',
-          type: 'image/jpeg',
-        },
+        nuevaImagen: imageData,
       });
       setImageUri(result.assets[0].uri);
     }
   };
 
-  const minUserBirthDate = new Date();
-  minUserBirthDate.setFullYear(minUserBirthDate.getFullYear() - 8);
-
   const validateDates = () => {
-    // ... (lógica de validación sin cambios)
+    if (formData.fechaInicio && formData.fechaFin) {
+      return validateDate(formData.fechaFin, true, formData.fechaInicio);
+    }
     return true;
   };
 
   const handleSave = () => {
-    if (!validateDates()) return;
+    // Validar que no hay errores
+    const hasErrors = Object.values(errors).some(error => error !== null);
+    if (hasErrors) {
+      Alert.alert('Error', 'Por favor corrige los errores antes de continuar');
+      return;
+    }
+
+    if (!validateDates()) {
+      Alert.alert('Error', 'Las fechas no son válidas');
+      return;
+    }
+
     if ((modalType === 'insignia' || modalType === 'recompensa') && !formData.nuevaImagen && !currentEditId) {
       Alert.alert('Error', 'Debe seleccionar una imagen.');
       return;
@@ -267,10 +346,8 @@ const ModalForm = ({
     setShowDatePicker(null);
     if (event.type === 'dismissed') return;
     if (selectedDate) {
-      setFormData((prev) => ({
-        ...prev,
-        [showDatePicker]: selectedDate.toISOString(),
-      }));
+      const isEndDate = showDatePicker === 'fechaFin';
+      handleDateChange(showDatePicker, selectedDate.toISOString(), isEndDate);
     }
   };
 
@@ -321,13 +398,16 @@ const ModalForm = ({
                   : 'Seleccionar fecha'}
               </Text>
             </TouchableOpacity>
+            {errors[key] && (
+              <Text style={modalStyles.errorText}>{errors[key]}</Text>
+            )}
             {showDatePicker === key && (
               <DateTimePicker
                 value={formData[key] ? new Date(formData[key]) : new Date()}
                 mode="date"
                 display="default"
                 onChange={onChangeDate}
-                maximumDate={modalType === 'usuario' ? minUserBirthDate : undefined}
+                minimumDate={new Date()} // No permitir fechas pasadas
               />
             )}
           </View>
@@ -340,10 +420,19 @@ const ModalForm = ({
           <TextInput
             style={modalStyles.input}
             value={String(formData[key] || '')}
-            onChangeText={(text) => setFormData({ ...formData, [key]: text })}
+            onChangeText={(text) => {
+              if (type === 'number') {
+                handleNumberChange(key, text);
+              } else {
+                handleTextChange(key, text);
+              }
+            }}
             placeholder={label}
             keyboardType={type === 'number' ? 'numeric' : 'default'}
           />
+          {errors[key] && (
+            <Text style={modalStyles.errorText}>{errors[key]}</Text>
+          )}
         </View>
       );
     });
@@ -512,26 +601,23 @@ export default function AdminScreen() {
     setModalVisible(true);
   };
 
-  // --- FUNCIÓN HANDLESUBMIT CORREGIDA ---
   const handleSubmit = async () => {
     if (loading) return;
 
     try {
-      // <-- CAMBIO CLAVE: Se agrupa la lógica de Insignia y Recompensa porque ambas usan FormData
       if (modalType === 'insignia' || modalType === 'recompensa') {
         const fd = new FormData();
         fd.append('nombre', formData.nombre || '');
         fd.append('descripcion', formData.descripcion || '');
         
         if (modalType === 'insignia') {
-            fd.append('puntosrequeridos', formData.puntosrequeridos || 0);
-        } else { // Es una recompensa
-            fd.append('puntosRequeridos', formData.puntosRequeridos || 0);
-            fd.append('cantidadDisponible', formData.cantidadDisponible || 0);
+          fd.append('puntosrequeridos', formData.puntosrequeridos || 0);
+        } else {
+          fd.append('puntosRequeridos', formData.puntosRequeridos || 0);
+          fd.append('cantidadDisponible', formData.cantidadDisponible || 0);
         }
 
         if (formData.nuevaImagen) {
-          // El backend espera 'insignia' para insignias y 'imagen' para recompensas
           const fileKey = modalType === 'insignia' ? 'insignia' : 'imagen';
           fd.append(fileKey, {
             uri: formData.nuevaImagen.uri,
@@ -554,7 +640,6 @@ export default function AdminScreen() {
           }
         }
       } else {
-        // Lógica anterior para los que no usan imágenes (JSON)
         if (currentEditId) {
           switch (modalType) {
             case 'usuario': {

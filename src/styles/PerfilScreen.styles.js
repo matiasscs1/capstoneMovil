@@ -5,12 +5,12 @@ import {
   StatusBar,
 } from "react-native";
 
-// --- CONSTANTES DE ESCALADO Y DIMENSIONES ---
-// Se exportan para que el componente principal también pueda usarlas si es necesario.
-export const { width: screenWidth } = Dimensions.get("window");
+export const { width: screenWidth, height: screenHeight } =
+  Dimensions.get("window");
 export const scale = (size) => (screenWidth / 375) * size;
 
 export const styles = StyleSheet.create({
+  // --- Estilos existentes (sin cambios) ---
   fullScreenContainer: {
     flex: 1,
     backgroundColor: "#ffffff",
@@ -19,19 +19,17 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#ffffff",
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : scale(40),
-    paddingBottom: scale(15),
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+    height:
+      (Platform.OS === "android" ? StatusBar.currentHeight : 0) + scale(50),
     paddingHorizontal: scale(16),
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
     borderBottomColor: "#dbdbdb",
   },
   backButton: {
     position: "absolute",
     left: scale(16),
-    top:
-      Platform.OS === "android"
-        ? StatusBar.currentHeight + scale(12)
-        : scale(52),
+    top: (Platform.OS === "android" ? StatusBar.currentHeight : 0) + scale(12),
     zIndex: 1,
   },
   backButtonText: {
@@ -46,18 +44,13 @@ export const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#262626",
   },
-  listHeader: {
-    paddingHorizontal: scale(16),
-    paddingBottom: scale(16),
-  },
   profileHeader: {
-    width: "100%",
-    paddingTop: scale(10),
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(20),
   },
   profileTopRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     marginBottom: scale(15),
   },
   avatarContainer: {
@@ -111,20 +104,18 @@ export const styles = StyleSheet.create({
     paddingVertical: scale(10),
     alignItems: "center",
     width: "100%",
-    marginBottom: scale(20),
   },
   editProfileButtonText: {
     color: "#ffffff",
     fontSize: scale(14),
     fontWeight: "bold",
   },
-  gridRow: {
-    justifyContent: "space-between",
-  },
+  gridRow: {},
   gridItem: {
-    width: (screenWidth - scale(2) * 2) / 3,
-    height: (screenWidth - scale(2) * 2) / 3,
-    marginBottom: scale(2),
+    width: screenWidth / 3,
+    height: screenWidth / 3,
+    borderWidth: 1,
+    borderColor: "#fff",
   },
   gridImage: {
     width: "100%",
@@ -139,7 +130,7 @@ export const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: scale(15),
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
     borderBottomColor: "#dbdbdb",
   },
   postModalUserInfo: {
@@ -149,7 +140,7 @@ export const styles = StyleSheet.create({
   pdfIconContainer: {
     width: scale(40),
     height: scale(40),
-    borderRadius: scale(8),
+    borderRadius: scale(20),
     backgroundColor: "#fbe9e7",
     justifyContent: "center",
     alignItems: "center",
@@ -178,14 +169,16 @@ export const styles = StyleSheet.create({
   postCaption: {
     padding: scale(15),
     fontSize: scale(14),
+    lineHeight: scale(20),
   },
   postActions: {
     flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: scale(15),
     paddingBottom: scale(15),
   },
   actionButton: {
-    marginRight: scale(15),
+    marginRight: scale(20),
   },
   actionIcon: {
     fontSize: scale(24),
@@ -200,16 +193,18 @@ export const styles = StyleSheet.create({
   },
   commentsModalContent: {
     backgroundColor: "#ffffff",
-    height: "60%",
+    height: screenHeight * 0.65,
     borderTopLeftRadius: scale(20),
     borderTopRightRadius: scale(20),
-    padding: scale(15),
+    paddingHorizontal: scale(15),
+    paddingTop: scale(15),
+    paddingBottom: Platform.OS === "ios" ? scale(30) : scale(15),
   },
   commentsHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
     borderBottomColor: "#dbdbdb",
     paddingBottom: scale(10),
     marginBottom: scale(10),
@@ -218,21 +213,30 @@ export const styles = StyleSheet.create({
     fontSize: scale(16),
     fontWeight: "bold",
   },
+  commentsLoaderContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   commentItem: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: scale(10),
+    paddingVertical: scale(12),
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
   },
   commentTextContainer: {
     flex: 1,
+    marginRight: scale(10),
   },
   commentUser: {
     fontWeight: "bold",
     fontSize: scale(14),
+    marginBottom: scale(2),
   },
   commentText: {
     fontSize: scale(14),
+    color: "#333",
   },
   commentActions: {
     flexDirection: "row",
@@ -240,15 +244,14 @@ export const styles = StyleSheet.create({
   commentActionIcon: {
     fontSize: scale(18),
     marginLeft: scale(15),
-    color: "#8e8e8e",
+    color: "#555",
   },
   commentInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: 1,
     borderTopColor: "#dbdbdb",
     paddingTop: scale(10),
-    marginTop: "auto",
   },
   commentInput: {
     flex: 1,
@@ -271,6 +274,12 @@ export const styles = StyleSheet.create({
   sendButtonIcon: {
     color: "#ffffff",
     fontSize: scale(18),
+  },
+  emptyListText: {
+    textAlign: "center",
+    color: "#999",
+    marginTop: scale(20),
+    fontSize: scale(14),
   },
   editModalOverlay: {
     flex: 1,
@@ -314,6 +323,7 @@ export const styles = StyleSheet.create({
     paddingVertical: scale(12),
     borderRadius: scale(8),
     alignItems: "center",
+    justifyContent: "center",
   },
   cancelButton: {
     backgroundColor: "#efefef",
@@ -321,6 +331,9 @@ export const styles = StyleSheet.create({
   },
   saveButton: {
     backgroundColor: "#f57c00",
+  },
+  saveButtonDisabled: {
+    backgroundColor: "#f9a825",
   },
   editModalButtonText: {
     fontSize: scale(14),
@@ -337,6 +350,7 @@ export const styles = StyleSheet.create({
   },
   editProfileModalContent: {
     width: "90%",
+    maxHeight: "80%",
     backgroundColor: "#ffffff",
     borderRadius: scale(12),
     padding: scale(20),
@@ -383,9 +397,9 @@ export const styles = StyleSheet.create({
     marginBottom: scale(15),
   },
   label: {
-    fontSize: scale(12),
-    color: "#262626",
-    marginBottom: scale(5),
+    fontSize: scale(14),
+    color: "#333333",
+    marginBottom: scale(8),
     fontWeight: "500",
   },
   input: {
@@ -400,27 +414,26 @@ export const styles = StyleSheet.create({
   dateInputContainer: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     borderWidth: 1,
     borderColor: "#dbdbdb",
     borderRadius: scale(8),
     backgroundColor: "#fafafa",
-  },
-  dateInput: {
-    flex: 1,
     paddingHorizontal: scale(12),
     paddingVertical: scale(10),
+  },
+  dateInputText: {
     fontSize: scale(14),
-    borderWidth: 0, // El borde ya está en el contenedor
+    color: "#333",
   },
   dateIcon: {
-    paddingHorizontal: scale(10),
-    fontSize: scale(16),
+    fontSize: scale(18),
     color: "#8e8e8e",
   },
   buttonsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: scale(10),
+    marginTop: scale(20),
   },
   profileModalButton: {
     flex: 1,
@@ -432,14 +445,14 @@ export const styles = StyleSheet.create({
   cancelProfileButton: {
     backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: "#dbdbdb",
+    borderColor: "#f57c00",
     marginRight: scale(10),
   },
   saveProfileButton: {
     backgroundColor: "#f57c00",
   },
   cancelProfileButtonText: {
-    color: "#262626",
+    color: "#f57c00",
     fontWeight: "bold",
     fontSize: scale(14),
   },

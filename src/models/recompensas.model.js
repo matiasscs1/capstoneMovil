@@ -42,3 +42,14 @@ export const verCanjesUsuarios = async () => {
   if (!res.ok) throw new Error(data.message);
   return data;
 };
+
+export const verCanjesPorUsuario = async (usuarioId) => {
+  const token = await getAuthToken();
+  const res = await fetch(`${BASE_URL}/canjes/${usuarioId}`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext'; // <-- Importar el hook de autenticación
 import {
   obtenerMisPublicaciones,
   toggleLikePublicacion,
@@ -9,10 +10,13 @@ import {
   eliminarComentario,
   obtenerSeguidoresYSeguidos,
   contarSeguidoresYSeguidos,
-  crearSeguimiento
+  crearSeguimiento,
+  actualizarUsuario,
 } from '../models/perfil.model.js';
 
 export const usePerfilViewModel = () => {
+  const { token } = useAuth(); // <-- Obtener el token del contexto
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [publicaciones, setPublicaciones] = useState([]);
@@ -20,14 +24,15 @@ export const usePerfilViewModel = () => {
   const [seguidoresYSeguidos, setSeguimientos] = useState(null);
   const [conteoSeguidores, setConteoSeguidores] = useState(null);
 
-  // Obtener publicaciones del usuario
+  // TODAS las funciones ahora pasan el 'token' a la capa del modelo.
+
   const cargarMisPublicaciones = async () => {
+    if (!token) return;
     setLoading(true);
     setError(null);
     try {
-      const data = await obtenerMisPublicaciones();
+      const data = await obtenerMisPublicaciones(token);
       setPublicaciones(data || []);
-      console.log(data)
       return data;
     } catch (e) {
       setError(e.message);
@@ -37,22 +42,10 @@ export const usePerfilViewModel = () => {
     }
   };
 
-  // Like/Dislike
   const darLike = async (id_publicacion) => {
+    if (!token) return;
     try {
-      const data = await toggleLikePublicacion(id_publicacion);
-      await cargarMisPublicaciones(); // refresca lista
-      return data;
-    } catch (e) {
-      setError(e.message);
-      throw e;
-    }
-  };
-
-  // Eliminar publicación
-  const borrarPublicacion = async (id_publicacion) => {
-    try {
-      const data = await eliminarPublicacion(id_publicacion);
+      const data = await toggleLikePublicacion(token, id_publicacion);
       await cargarMisPublicaciones();
       return data;
     } catch (e) {
@@ -61,10 +54,22 @@ export const usePerfilViewModel = () => {
     }
   };
 
-  // Crear comentario
-  const comentar = async (publicacionId, texto) => {
+  const borrarPublicacion = async (id_publicacion) => {
+    if (!token) return;
     try {
-      const nuevo = await crearComentario(publicacionId, texto);
+      const data = await eliminarPublicacion(token, id_publicacion);
+      await cargarMisPublicaciones();
+      return data;
+    } catch (e) {
+      setError(e.message);
+      throw e;
+    }
+  };
+
+  const comentar = async (publicacionId, texto) => {
+    if (!token) return;
+    try {
+      const nuevo = await crearComentario(token, publicacionId, texto);
       await cargarComentarios(publicacionId);
       return nuevo;
     } catch (e) {
@@ -73,10 +78,10 @@ export const usePerfilViewModel = () => {
     }
   };
 
-  // Cargar comentarios
   const cargarComentarios = async (publicacionId) => {
+    if (!token) return;
     try {
-      const data = await listarComentarios(publicacionId);
+      const data = await listarComentarios(token, publicacionId);
       setComentarios(data || []);
       return data;
     } catch (e) {
@@ -85,10 +90,10 @@ export const usePerfilViewModel = () => {
     }
   };
 
-  // Editar comentario
   const actualizarComentario = async (id_comentario, texto) => {
+    if (!token) return;
     try {
-      const actualizado = await editarComentario(id_comentario, texto);
+      const actualizado = await editarComentario(token, id_comentario, texto);
       return actualizado;
     } catch (e) {
       setError(e.message);
@@ -96,10 +101,10 @@ export const usePerfilViewModel = () => {
     }
   };
 
-  // Eliminar comentario
   const borrarComentario = async (id_comentario) => {
+    if (!token) return;
     try {
-      const eliminado = await eliminarComentario(id_comentario);
+      const eliminado = await eliminarComentario(token, id_comentario);
       return eliminado;
     } catch (e) {
       setError(e.message);
@@ -107,21 +112,10 @@ export const usePerfilViewModel = () => {
     }
   };
 
-  // Seguidores y seguidos
-  const cargarSeguimientos = async () => {
-    try {
-      const data = await obtenerSeguidoresYSeguidos();
-      setSeguimientos(data?.seguimientos || []);
-      return data;
-    } catch (e) {
-      setError(e.message);
-      throw e;
-    }
-  };
-
   const contarSeguimientos = async () => {
+    if (!token) return;
     try {
-      const data = await contarSeguidoresYSeguidos();
+      const data = await contarSeguidoresYSeguidos(token);
       setConteoSeguidores(data);
       return data;
     } catch (e) {
@@ -130,16 +124,6 @@ export const usePerfilViewModel = () => {
     }
   };
 
-  const seguirUsuario = async (seguidoId) => {
-    try {
-      const data = await crearSeguimiento(seguidoId);
-      await cargarSeguimientos();
-      return data;
-    } catch (e) {
-      setError(e.message);
-      throw e;
-    }
-  };
 
   return {
     loading,
@@ -148,18 +132,14 @@ export const usePerfilViewModel = () => {
     comentarios,
     seguidoresYSeguidos,
     conteoSeguidores,
-    // Publicaciones
     cargarMisPublicaciones,
     darLike,
     borrarPublicacion,
-    // Comentarios
     cargarComentarios,
     comentar,
     actualizarComentario,
     borrarComentario,
-    // Seguimiento
-    cargarSeguimientos,
     contarSeguimientos,
-    seguirUsuario
+    
   };
 };

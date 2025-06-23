@@ -12,7 +12,12 @@ const theme = {
 };
 
 export const styles = StyleSheet.create({
-  // --- Estilos de la pantalla principal (sin cambios) ---
+  errorText: {
+    color: '#e74c3c',
+    fontSize: 12,
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
   container: {
     flex: 1,
     backgroundColor: theme.lightPrimaryColor,

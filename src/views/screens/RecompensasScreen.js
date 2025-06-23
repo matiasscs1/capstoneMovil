@@ -9,91 +9,163 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  Dimensions, 
-  Platform, 
+  Dimensions,
+  Platform,
 } from "react-native";
-
 import { useRecompensaViewModel } from "../../viewmodels/RecompensaViewModel.js";
-import { styles } from "../../styles/RecompensaScreen.styles.js"; 
-
+import { styles } from "../../styles/RecompensaScreen.styles.js";
+import { useAuth } from '../../context/AuthContext';
 
 const { width: screenWidth } = Dimensions.get("window");
 const scale = (size) => (screenWidth / 375) * size;
 
-export default function RecompensasScreen({ navigation }) {
-  const {
+export default function RecompensasScreen({ navigation, route }) {
+  // Obtener usuarioId desde route params o contexto de autenticación
+  const { user } = useAuth();
+  const usuarioId = user?.id_usuario;
+const {
     loading,
     error,
     recompensas,
-    canjes,
+    canjesUsuario, // Cambiado de canjes a canjesUsuario
     cargarRecompensas,
-    cargarCanjes,
+    cargarCanjesPorUsuario, // Nueva función
     canjear,
   } = useRecompensaViewModel();
 
+  // Estado para la lista filtrada y la paginación
   const [filteredRecompensas, setFilteredRecompensas] = useState([]);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [isRedeeming, setIsRedeeming] = useState(false);
 
+  // Carga inicial y pull-to-refresh
   const loadAllData = async () => {
     try {
-      await Promise.all([cargarCanjes(), cargarRecompensas()]);
+      // 1) Intentar cargar canjes del usuario específico
+      try {
+        await cargarCanjesPorUsuario(usuarioId);
+      } catch (canjesError) {
+        // Si el error es porque no hay canjes (404), no es un error real
+        if (canjesError.message && canjesError.message.includes("No se encontraron canjes para el usuario")) {
+          // No hacer nada, canjesUsuario quedará vacío y se mostrarán todas las recompensas
+        } else {
+          // Si es otro tipo de error, sí es problemático
+          throw canjesError;
+        }
+      }
+      
+      // 2) Cargar todas las recompensas
+      await cargarRecompensas();
+      // Reiniciar página
       setPage(1);
     } catch (e) {
-      console.error("Error al cargar datos en pull-to-refresh:", e);
+      console.error("Error al cargar datos:", e);
+      Alert.alert("Error", "No se pudieron recargar los datos.");
     }
   };
 
   useEffect(() => {
     loadAllData();
-  }, []);
+  }, [usuarioId]);
 
+  // Efecto de filtrado: filtrar recompensas que NO están en canjesUsuario
   useEffect(() => {
-    if (recompensas.length) {
-      const canjeadosIds = (canjes || []).map((c) =>
-        String(c.recompensaId).trim()
-      );
-
-      const disponibles = recompensas.filter((r) => {
-        const idRecompensa = String(r.id_recompensa).trim();
-        return r.cantidadDisponible > 0 && !canjeadosIds.includes(idRecompensa);
-      });
-
-      setFilteredRecompensas(disponibles.slice(0, page * pageSize));
-    } else {
+    // Si no hay recompensas
+    if (!recompensas || recompensas.length === 0) {
       setFilteredRecompensas([]);
-    }
-  }, [recompensas, canjes, page, pageSize]);
-
-  const handleBackPress = () => {
-    navigation.goBack();
-  };
-
-  const handleCanjear = async (idRecompensa) => {
-    if (isRedeeming) {
       return;
     }
 
-    setIsRedeeming(true);
+    // Si no hay canjes del usuario, mostrar todas las recompensas
+    if (!canjesUsuario || !canjesUsuario.id_recompensa || canjesUsuario.id_recompensa.length === 0) {
+      setFilteredRecompensas(recompensas.slice(0, page * pageSize));
+      return;
+    }
 
+    // Obtener los IDs de recompensas ya canjeadas por el usuario
+    const recompensasCanjeadas = canjesUsuario.id_recompensa.map(id => String(id).trim());
+    
+
+    // Filtrar recompensas: mostrar solo las que NO están en la lista de canjeadas
+    const recompensasDisponibles = recompensas.filter((recompensa) => {
+      const idRecompensa = String(recompensa.id_recompensa).trim();
+      const noEstaCanjeada = !recompensasCanjeadas.includes(idRecompensa);
+      const estaActiva = recompensa.activa;
+      const hayDisponibles = recompensa.cantidadDisponible > 0;
+      
+      return noEstaCanjeada && estaActiva && hayDisponibles;
+    });
+
+
+    // Aplicar paginación
+    setFilteredRecompensas(recompensasDisponibles.slice(0, page * pageSize));
+  }, [
+    recompensas,
+    canjesUsuario,
+    page,
+    pageSize,
+  ]);
+
+  const handleBackPress = () => navigation.goBack();
+
+  const handleCanjear = async (idRecompensa) => {
+    if (isRedeeming) return;
+    setIsRedeeming(true);
     try {
       await canjear(idRecompensa);
       Alert.alert("Éxito", "Recompensa canjeada correctamente");
+      // Solo recargar datos si el canje fue exitoso
       await loadAllData();
     } catch (e) {
-      Alert.alert("Error", e.message || "No se pudo canjear la recompensa");
+      // Manejar diferentes tipos de errores
+      const errorMessage = e.message || "No se pudo canjear la recompensa";
+      
+      // Verificar si es un error de puntos insuficientes
+      const esPuntosInsuficientes = errorMessage.toLowerCase().includes("no tienes suficientes puntos") ||
+                                  errorMessage.toLowerCase().includes("puntos insuficientes") ||
+                                  errorMessage.toLowerCase().includes("insufficient points");
+      
+      // Mostrar el alert con el mensaje de error
+      Alert.alert("Error", errorMessage);
+      
+      // Si NO es un error de puntos insuficientes, podría ser un error más serio
+      // que requiera recargar los datos (ej: recompensa ya no disponible)
+      if (!esPuntosInsuficientes) {
+        // Solo recargar en casos de errores que no sean falta de puntos
+        try {
+          await loadAllData();
+        } catch (reloadError) {
+          console.error("Error al recargar datos después de error de canje:", reloadError);
+        }
+      } 
     } finally {
       setIsRedeeming(false);
     }
   };
 
+  const cargarMas = () => {
+    if (!recompensas || recompensas.length === 0) return;
+    
+    // Calcular cuántas recompensas disponibles hay en total
+    const recompensasCanjeadas = canjesUsuario?.id_recompensa || [];
+    const totalDisponibles = recompensas.filter((recompensa) => {
+      const idRecompensa = String(recompensa.id_recompensa).trim();
+      const noEstaCanjeada = !recompensasCanjeadas.includes(idRecompensa);
+      const estaActiva = recompensa.activa;
+      const hayDisponibles = recompensa.cantidadDisponible > 0;
+      
+      return noEstaCanjeada && estaActiva && hayDisponibles;
+    }).length;
+
+    if (filteredRecompensas.length < totalDisponibles && !loading) {
+      setPage((p) => p + 1);
+    }
+  };
+
   const getCardWidth = () => {
-    // Estas variables `screenWidth` y `scale` son las definidas localmente.
-    // Si quisieras que el `scale` fuera el del archivo de estilos, tendrías que exportarlo también.
     const horizontalMarginAndPadding = scale(16) * 2;
-    const idealWidth = screenWidth - horizontalMarginAndPadding;
-    return idealWidth;
+    return screenWidth - horizontalMarginAndPadding;
   };
 
   const renderRecompensa = ({ item }) => {
@@ -106,7 +178,6 @@ export default function RecompensasScreen({ navigation }) {
       activa,
       imagenUrl,
     } = item;
-
     const cardWidth = getCardWidth();
 
     return (
@@ -125,21 +196,10 @@ export default function RecompensasScreen({ navigation }) {
               </View>
             )}
           </View>
-          <View style={styles.starBadge}>
-            <Text style={styles.starIcon}>⭐</Text>
-          </View>
         </View>
 
         <Text style={styles.cardTitle}>{nombre}</Text>
-
-        <View style={styles.tagContainer}>
-          <Text style={styles.tagIcon}>🎁</Text>
-          <Text style={styles.tagText}>Recompensa</Text>
-        </View>
-
-        <View style={styles.descriptionContainer}>
-          <Text style={styles.cardDescription}>{descripcion}</Text>
-        </View>
+        <Text style={styles.cardDescription}>{descripcion}</Text>
 
         <View style={styles.infoRow}>
           <View style={styles.pointsBox}>
@@ -149,7 +209,9 @@ export default function RecompensasScreen({ navigation }) {
             <Text style={styles.pointsLabel}>PUNTOS</Text>
           </View>
           <View style={styles.availableBox}>
-            <Text style={styles.availableValue}>{cantidadDisponible}</Text>
+            <Text style={styles.availableValue}>
+              {cantidadDisponible}
+            </Text>
             <Text style={styles.availableLabel}>DISPONIBLES</Text>
           </View>
         </View>
@@ -157,34 +219,35 @@ export default function RecompensasScreen({ navigation }) {
         <TouchableOpacity
           style={[
             styles.button,
-            !activa && styles.buttonDisabled,
-            isRedeeming && styles.buttonLoading,
+            (!activa || isRedeeming) && styles.buttonDisabled,
           ]}
-          onPress={() => handleCanjear(id_recompensa)}
           disabled={!activa || isRedeeming}
+          onPress={() => handleCanjear(id_recompensa)}
         >
           {isRedeeming ? (
             <ActivityIndicator color="#fff" size="small" />
           ) : (
-            <Text style={styles.buttonText}>Canjear Recompensa</Text>
+            <Text style={styles.buttonText}>
+              Canjear Recompensa
+            </Text>
           )}
         </TouchableOpacity>
       </View>
     );
   };
 
-  const cargarMas = () => {
-    if (filteredRecompensas.length < recompensas.length && !loading) {
-      setPage((prev) => prev + 1);
-    }
-  };
-
   return (
     <View style={styles.fullScreenContainer}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#ffffff"
+      />
 
       <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={handleBackPress}
+          style={styles.backButton}
+        >
           <Text style={styles.backButtonText}>{"<"}</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Recompensas</Text>
@@ -195,25 +258,30 @@ export default function RecompensasScreen({ navigation }) {
           <View style={styles.centeredContainer}>
             <ActivityIndicator size="large" color="#f57c00" />
           </View>
-        ) : error ? (
+        ) : error && filteredRecompensas.length === 0 ? (
+          // Solo mostrar error general si no hay recompensas disponibles
           <View style={styles.centeredContainer}>
             <Text style={styles.errorText}>{error}</Text>
           </View>
         ) : (
           <FlatList
             data={filteredRecompensas}
-            keyExtractor={(item) => item.id_recompensa}
+            keyExtractor={(item) =>
+              item.id_recompensa.toString()
+            }
             renderItem={renderRecompensa}
             contentContainerStyle={styles.listContent}
             onEndReached={cargarMas}
             onEndReachedThreshold={0.5}
-            ListEmptyComponent={
+            onRefresh={loadAllData}
+            refreshing={loading}
+            ListEmptyComponent={() => (
               <View style={styles.centeredContainer}>
                 <Text style={styles.emptyText}>
-                  No hay recompensas disponibles.
+                  No hay recompensas disponibles para canjear.
                 </Text>
               </View>
-            }
+            )}
             showsVerticalScrollIndicator={true}
             scrollIndicatorInsets={{
               top: 0,
@@ -224,8 +292,6 @@ export default function RecompensasScreen({ navigation }) {
             scrollIndicatorTintColor={
               Platform.OS === "ios" ? "#f57c00" : undefined
             }
-            onRefresh={loadAllData}
-            refreshing={loading}
           />
         )}
       </SafeAreaView>

@@ -1,3 +1,4 @@
+// En context/AuthContext.js
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -5,7 +6,7 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);  // <--- nuevo estado para token
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,6 +28,8 @@ export const AuthProvider = ({ children }) => {
     setUser(usuario);
     setToken(jwtToken);
   };
+
+  
 
   const logout = async () => {
     await AsyncStorage.removeItem('user');

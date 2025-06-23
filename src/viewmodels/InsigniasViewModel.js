@@ -49,7 +49,6 @@ export const useInsigniasViewModel = () => {
     setError(null);
     try {
       const data = await reclamarInsignia(id_insignia);
-      // Recargar insignias y reclamadas después de reclamar
       await cargarInsignias();
       await cargarInsigniasReclamadas();
       return data;
