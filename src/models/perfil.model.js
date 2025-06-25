@@ -1,6 +1,6 @@
 // No necesitamos importar nada para obtener el token aquí.
 
-const BASE_URL = "https://kong-7df170cea7usbksss.kongcloud.dev";
+const BASE_URL = "https://kong-0c858408d8us2s9oc.kongcloud.dev";
 
 // TODAS las funciones ahora reciben 'token' como primer argumento.
 

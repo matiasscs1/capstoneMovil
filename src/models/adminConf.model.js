@@ -1,6 +1,6 @@
 import { getAuthToken } from './tokenService';
 
-const BASE_URL = 'https://kong-7df170cea7usbksss.kongcloud.dev';
+const BASE_URL = 'https://kong-0c858408d8us2s9oc.kongcloud.dev';
 
 // ACTIVIDADES
 export const crearActividad = async (actividadData) => {

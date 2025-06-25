@@ -41,10 +41,12 @@ export default function InicioScreen() {
   const [misionesConEstado, setMisionesConEstado] = useState([]);
   const [isLoadingMisionesUI, setIsLoadingMisionesUI] = useState(true);
   const [errorAlCargarMisiones, setErrorAlCargarMisiones] = useState(null);
+  const [datosInicialmenteLoaded, setDatosInicialmenteLoaded] = useState(false);
 
   const navigation = useNavigation();
 
   const procesarYActualizarMisionesVisibles = useCallback(() => {
+
     if (!misiones || misiones.length === 0) {
       setMisionesConEstado([]);
       setIsLoadingMisionesUI(false);
@@ -55,17 +57,32 @@ export default function InicioScreen() {
     const misionesActualizadas = misiones
       .filter(mision => new Date(mision.fechaFin) >= hoy)
       .map((mision) => {
+        // Buscar inscripción activa para esta misión
         const inscripcion = inscripciones?.find(insc => insc.id_mision === mision.id_mision);
-        if (!inscripcion) {
-          return { ...mision, estado: 'Inscribirse', disableButton: false };
+
+
+        let estado = "Inscribirse";
+        let disableButton = false;
+
+        if (inscripcion) {
+          // Si existe inscripción, determinar el estado según la lógica web
+          if (inscripcion.estado === true) {
+            estado = "Puntos otorgados";
+            disableButton = true;
+          } else {
+            // inscripcion.estado === false, verificar evidencia
+            estado = inscripcion.estadoEvidencia ? "Ver progreso" : "Subir evidencia";
+            disableButton = false;
+          }
         }
-        if (inscripcion.estado) {
-          return { ...mision, estado: 'Puntos otorgados', disableButton: true };
-        }
-        if (inscripcion.estadoEvidencia) {
-          return { ...mision, estado: 'Ver progreso', disableButton: false };
-        }
-        return { ...mision, estado: 'Subir evidencia', disableButton: false };
+        // Si no hay inscripción, mantiene "Inscribirse"
+
+        return {
+          ...mision,
+          estado,
+          disableButton,
+          id_inscripcion: inscripcion?.id_inscripcion || null
+        };
       });
 
     setMisionesConEstado(misionesActualizadas);
@@ -89,19 +106,28 @@ export default function InicioScreen() {
     } catch (e) {
       console.warn('Advertencia al cargar inscripciones:', e);
     }
-  }, [cargarMisiones, cargarInscripciones]);
+
+    // Marcar que los datos se han cargado al menos una vez
+    if (!datosInicialmenteLoaded) {
+      setDatosInicialmenteLoaded(true);
+    }
+  }, [cargarMisiones, cargarInscripciones, datosInicialmenteLoaded]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      cargarDatosCompletos();
+      // Solo cargar automáticamente si no se han cargado datos inicialmente
+      if (!datosInicialmenteLoaded) {
+        cargarDatosCompletos();
+      }
     });
 
-    if (misionesConEstado.length === 0) {
+    // Carga inicial solo si no hay datos cargados
+    if (!datosInicialmenteLoaded && misionesConEstado.length === 0) {
       cargarDatosCompletos();
     }
 
     return unsubscribe;
-  }, [navigation, cargarDatosCompletos, misionesConEstado.length]);
+  }, [navigation, cargarDatosCompletos, misionesConEstado.length, datosInicialmenteLoaded]);
 
   useEffect(() => {
     procesarYActualizarMisionesVisibles();
@@ -355,10 +381,12 @@ export default function InicioScreen() {
     );
   };
 
-  if (isLoadingMisionesUI && misionesConEstado.length === 0 && !errorAlCargarMisiones) {
+  // Solo mostrar loading en la carga inicial
+  if (isLoadingMisionesUI && !datosInicialmenteLoaded) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#f97316" />
+        <Text style={styles.loadingText}>Cargando misiones...</Text>
       </View>
     );
   }
@@ -374,11 +402,9 @@ export default function InicioScreen() {
         onRefresh={onRefreshLocal}
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
-            {isLoadingMisionesUI ? (
-              <Text style={styles.emptyText}>Cargando misiones...</Text>
-            ) : (
-              <Text style={styles.emptyText}>No hay misiones disponibles en este momento.</Text>
-            )}
+            <Text style={styles.emptyTextRed}>
+              No hay misiones para participar{'\n'}Desliza hacia abajo para recargar
+            </Text>
           </View>
         )}
       />
@@ -396,9 +422,9 @@ export default function InicioScreen() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <View>
-                <Text style={styles.modalTitle}>Subir Inscripción</Text>
+                <Text style={styles.modalTitle}>Subir Evidencia</Text>
                 <Text style={styles.modalSubtitle}>
-                  Completa tu inscripción y adjunta los documentos necesarios
+                  Adjunta los documentos que demuestren tu participación
                 </Text>
               </View>
               <TouchableOpacity
@@ -410,12 +436,12 @@ export default function InicioScreen() {
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Descripción de la Inscripción</Text>
+                <Text style={styles.inputLabel}>Descripción de la Evidencia</Text>
                 <TextInput
                   style={styles.textInput}
                   multiline
                   numberOfLines={4}
-                  placeholder="Describe tu inscripción aquí..."
+                  placeholder="Describe tu evidencia aquí..."
                   placeholderTextColor="#9ca3af"
                   value={descripcion}
                   onChangeText={setDescripcion}
@@ -481,7 +507,7 @@ export default function InicioScreen() {
                 style={[
                   styles.submitButton,
                   (subiendo || archivos.length === 0 || !descripcion.trim()) &&
-                    styles.submitButtonDisabled
+                  styles.submitButtonDisabled
                 ]}
                 onPress={handleSubirEvidencia}
                 disabled={subiendo || archivos.length === 0 || !descripcion.trim()}
@@ -489,7 +515,7 @@ export default function InicioScreen() {
                 {subiendo ? (
                   <ActivityIndicator size="small" color="white" />
                 ) : (
-                  <Text style={styles.submitButtonText}>Subir Inscripción</Text>
+                  <Text style={styles.submitButtonText}>Subir Evidencia</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -499,4 +525,3 @@ export default function InicioScreen() {
     </>
   );
 }
-

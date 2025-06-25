@@ -1,6 +1,6 @@
 import { getAuthToken } from './tokenService';
 
-BASE_URL = 'https://kong-7df170cea7usbksss.kongcloud.dev';
+BASE_URL = 'https://kong-0c858408d8us2s9oc.kongcloud.dev';
 
 export const loginUser = async (correo, contrasenia) => {
 

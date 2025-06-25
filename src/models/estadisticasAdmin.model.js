@@ -1,6 +1,6 @@
 import { getAuthToken } from './tokenService';
 
-const BASE_URL = 'https://kong-7df170cea7usbksss.kongcloud.dev';
+const BASE_URL = 'https://kong-0c858408d8us2s9oc.kongcloud.dev';
 
 // Obtener usuarios
 export const obtenerUsuarios = async () => {
@@ -13,6 +13,7 @@ export const obtenerUsuarios = async () => {
     },
   });
   const data = await res.json();
+
   if (!res.ok) throw new Error(data.message);
   return data;
 };
@@ -28,6 +29,7 @@ export const obtenerPublicaciones = async () => {
     },
   });
   const data = await res.json();
+
   if (!res.ok) throw new Error(data.message);
   return data;
 };
@@ -43,6 +45,7 @@ export const obtenerRecompensas = async () => {
     },
   });
   const data = await res.json();
+
   if (!res.ok) throw new Error(data.message);
   return data.recompensas || [];
 };
@@ -55,6 +58,7 @@ export const obtenerRanking = async () => {
     headers: { Authorization: `Bearer ${token}` },
   });
   const data = await res.json();
+
   if (!res.ok) throw new Error(data.message);
   return data.ranking;
 };
@@ -67,6 +71,7 @@ export const obtenerCanjes = async () => {
     headers: { Authorization: `Bearer ${token}` },
   });
   const data = await res.json();
+
   if (!res.ok) throw new Error(data.message);
   return data;
 };

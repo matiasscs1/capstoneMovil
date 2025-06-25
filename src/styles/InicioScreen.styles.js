@@ -11,6 +11,13 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f9fafb'
   },
+  emptyTextRed: {
+    fontSize: 16,
+    color: '#dc2626', // Rojo
+    textAlign: 'center',
+    fontWeight: '500',
+    lineHeight: 24,
+  },
   card: {
     backgroundColor: 'white',
     borderRadius: 18,
