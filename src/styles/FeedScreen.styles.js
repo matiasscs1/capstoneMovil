@@ -306,7 +306,16 @@ export const styles = StyleSheet.create({
     color: "#333",
   },
   saveButtonLoading: {
-    backgroundColor: '#d97706', 
+    backgroundColor: '#d97706',
     opacity: 0.8,
+  },
+  // Agregar estos estilos
+  autorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  nombreClickeable: {
+    color: '#007bff', 
   },
 });

@@ -1,8 +1,35 @@
 // No necesitamos importar nada para obtener el token aquí.
 
 const BASE_URL = "https://kong-0c858408d8us2s9oc.kongcloud.dev";
+import { getAuthToken } from './tokenService';
 
 // TODAS las funciones ahora reciben 'token' como primer argumento.
+
+// obtener insignias reclamadas por un usuario
+export const obtenerInsigniasReclamadasUsuario = async (id_usuario) => {
+  try {
+    const token = await getAuthToken();
+    const res = await fetch(`${BASE_URL}/reclamadas/${id_usuario}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error('Error en obtenerInsigniasReclamadasUsuario:', data);
+      throw new Error(data.message || "Error al obtener insignias reclamadas");
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error en obtenerInsigniasReclamadasUsuario:', error);
+    throw error;
+  }
+};
 
 export const obtenerMisPublicaciones = async (token) => {
   const res = await fetch(`${BASE_URL}/mis-publicaciones`, {
@@ -120,7 +147,37 @@ export const crearSeguimiento = async (token, seguidoId) => {
     body: JSON.stringify({ seguidoId }),
   });
   const data = await res.json();
+  console.log("Respuesta de crearSeguimiento:", data);
   if (!res.ok) throw new Error(data.message || "Error al seguir usuario");
   return data;
 };
 
+export const obtenerDatosUsuario = async (id_usuario) => {
+  const token = await getAuthToken();
+
+  const res = await fetch(`${BASE_URL}/usuario/${id_usuario}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Error al obtener datos del usuario');
+  return data;
+};
+
+export const publicacionesPorUsuario = async (autorId) => {
+  const token = await getAuthToken();
+
+  const res = await fetch(`${BASE_URL}/publicaciones/usuario/${autorId}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Error al obtener publicaciones del usuario');
+  return data;
+};

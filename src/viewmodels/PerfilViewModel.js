@@ -8,14 +8,19 @@ import {
   listarComentarios,
   editarComentario,
   eliminarComentario,
+  publicacionesPorUsuario,
   obtenerSeguidoresYSeguidos,
   contarSeguidoresYSeguidos,
   crearSeguimiento,
   actualizarUsuario,
+  obtenerDatosUsuario,
+  obtenerInsigniasReclamadasUsuario,
 } from '../models/perfil.model.js';
 
 export const usePerfilViewModel = () => {
   const { token } = useAuth(); // <-- Obtener el token del contexto
+
+   const [insignias, setInsignias] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -25,6 +30,28 @@ export const usePerfilViewModel = () => {
   const [conteoSeguidores, setConteoSeguidores] = useState(null);
 
   // TODAS las funciones ahora pasan el 'token' a la capa del modelo.
+
+    const cargarInsigniasUsuario = async (id_usuario) => {
+      if (!id_usuario) {
+        setError('ID de usuario requerido');
+        return;
+      }
+  
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await obtenerInsigniasReclamadasUsuario(id_usuario);
+        setInsignias(data || []);
+        return data;
+      } catch (err) {
+        console.error('Error cargando insignias:', err);
+        setError(err.message);
+        setInsignias([]);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    };
 
   const cargarMisPublicaciones = async () => {
     if (!token) return;
@@ -123,23 +150,56 @@ export const usePerfilViewModel = () => {
       throw e;
     }
   };
-
-
-  return {
-    loading,
-    error,
-    publicaciones,
-    comentarios,
-    seguidoresYSeguidos,
-    conteoSeguidores,
-    cargarMisPublicaciones,
-    darLike,
-    borrarPublicacion,
-    cargarComentarios,
-    comentar,
-    actualizarComentario,
-    borrarComentario,
-    contarSeguimientos,
-    
+   const cargarDatosUsuario = async (id_usuario) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const usuario = await obtenerDatosUsuario(id_usuario);
+      return usuario;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const cargarPublicacionesporUsuario = async (id_usuario) => {
+    if (!token) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await publicacionesPorUsuario(token, id_usuario);
+      setPublicaciones(data || []);
+      return data;
+    } catch (e) {
+      setError(e.message);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }
+  
+
+
+return {
+  loading,
+  error,
+  publicaciones,
+  comentarios,
+  seguidoresYSeguidos,
+  conteoSeguidores,
+  insignias, 
+  cargarMisPublicaciones,
+  cargarInsigniasUsuario, 
+  darLike,
+  borrarPublicacion,
+  cargarComentarios,
+  comentar,
+  actualizarComentario,
+  borrarComentario,
+  contarSeguimientos,
+  cargarDatosUsuario,
+  cargarPublicacionesporUsuario
+};
 };

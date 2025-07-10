@@ -13,7 +13,7 @@ import {
   Keyboard,
   ScrollView,
   Dimensions,
-  ActivityIndicator, // --- CAMBIO: Asegúrate de que ActivityIndicator esté importado ---
+  ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { styles } from '../../styles/FeedScreen.styles.js';
@@ -25,7 +25,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 const screenHeight = Dimensions.get('window').height;
 
-export default function Feed() {
+export default function Feed({ navigation }) {
   const {
     publicaciones,
     cargarPublicaciones,
@@ -58,7 +58,6 @@ export default function Feed() {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingComment, setEditingComment] = useState(null);
   const [editedCommentText, setEditedCommentText] = useState('');
-  // --- CAMBIO: Nuevo estado para el botón de guardar ---
   const [isSavingComment, setIsSavingComment] = useState(false);
 
   const currentUserId = user?.id_usuario;
@@ -118,6 +117,18 @@ export default function Feed() {
   if (loading && publicacionesConAutor.length === 0) {
     return <Loader visible={true} />;
   }
+
+  // Función para navegar al perfil
+  // En tu componente Feed, cambia esta función:
+  const navegarAPerfil = (autorId) => {
+    if (autorId === currentUserId) {
+      // Si es el usuario actual, navegar a su propio perfil
+      navigation.navigate('Perfil');
+    } else {
+      // Si es otro usuario, navegar a PerfilUsuariosScreen
+      navigation.navigate('PerfilUsuariosScreen', { userId: autorId });
+    }
+  };
 
   const abrirModalComentarios = async (publicacion) => {
     setPublicacionSeleccionada(publicacion);
@@ -288,10 +299,9 @@ export default function Feed() {
   };
 
   const handleSaveComment = async () => {
-    // --- CAMBIO: Evitar doble clic y validar texto ---
     if (isSavingComment || !editedCommentText || !editedCommentText.trim()) return;
 
-    setIsSavingComment(true); // --- CAMBIO: Iniciar estado de carga ---
+    setIsSavingComment(true);
 
     try {
       const response = await editarComent(editingComment.id_comentario, editedCommentText.trim());
@@ -315,7 +325,7 @@ export default function Feed() {
         Alert.alert("Error", "No se pudo editar");
       }
     } finally {
-      setIsSavingComment(false); // --- CAMBIO: Finalizar estado de carga siempre ---
+      setIsSavingComment(false);
     }
   };
 
@@ -357,14 +367,25 @@ export default function Feed() {
           const imagenPublicacion = pub.imagenes?.[0]?.url;
           const likesCount = pub.likes?.length || 0;
           const userHasLiked = pub.likes?.includes(currentUserId);
+
           return (
             <View style={styles.card}>
               <View style={styles.header}>
-                <Image source={{ uri: fotoUsuario }} style={styles.avatar} />
-                <View style={styles.headerTextContainer}>
-                  <Text style={styles.nombreAutor}>{autor.nombre || 'Usuario'}</Text>
-                  <Text style={styles.fechaHeader}>{formatearFechaLegible(pub.fechaPublicacion)}</Text>
-                </View>
+                <TouchableOpacity
+                  onPress={() => navegarAPerfil(pub.autorId)}
+                  style={styles.autorContainer}
+                  activeOpacity={0.7}
+                >
+                  <Image source={{ uri: fotoUsuario }} style={styles.avatar} />
+                  <View style={styles.headerTextContainer}>
+                    <Text style={[styles.nombreAutor, styles.nombreClickeable]}>
+                      {autor.nombre || 'Usuario'}
+                    </Text>
+                    <Text style={styles.fechaHeader}>
+                      {formatearFechaLegible(pub.fechaPublicacion)}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
               </View>
               {imagenPublicacion && (
                 <Image source={{ uri: imagenPublicacion }} style={styles.imagenPublicacion} />
@@ -414,17 +435,26 @@ export default function Feed() {
                 <View style={styles.comentarioContainer}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.nombreComentario}>{item.autor?.nombre || 'Anonimo'}</Text>
+                      <TouchableOpacity
+                        onPress={() => navegarAPerfil(item.autorId)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[styles.nombreComentario, styles.nombreClickeable]}>
+                          {item.autor?.nombre || 'Anonimo'}
+                        </Text>
+                      </TouchableOpacity>
                       <Text style={styles.textoComentario}>{item.texto}</Text>
                     </View>
-                    <View style={{ flexDirection: 'row', marginLeft: 8 }}>
-                      <TouchableOpacity onPress={() => openEditModal(item)} style={{ padding: 6 }}>
-                        <Ionicons name="create-outline" size={18} color="#666" />
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => handleEliminarComentario(item)} style={{ padding: 6 }}>
-                        <Ionicons name="trash-outline" size={18} color="#e53935" />
-                      </TouchableOpacity>
-                    </View>
+                    {item.autorId === currentUserId && (
+                      <View style={{ flexDirection: 'row', marginLeft: 8 }}>
+                        <TouchableOpacity onPress={() => openEditModal(item)} style={{ padding: 6 }}>
+                          <Ionicons name="create-outline" size={18} color="#666" />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => handleEliminarComentario(item)} style={{ padding: 6 }}>
+                          <Ionicons name="trash-outline" size={18} color="#e53935" />
+                        </TouchableOpacity>
+                      </View>
+                    )}
                   </View>
                 </View>
               )}
@@ -468,7 +498,7 @@ export default function Feed() {
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* --- MODAL PARA EDITAR COMENTARIO --- */}
+      {/* Modal para editar comentario */}
       <Modal
         visible={editModalVisible}
         animationType="fade"
@@ -488,7 +518,7 @@ export default function Feed() {
               <TouchableOpacity
                 style={[styles.editModalButton, styles.cancelButton]}
                 onPress={closeEditModal}
-                disabled={isSavingComment} // --- CAMBIO: Deshabilitar mientras se guarda ---
+                disabled={isSavingComment}
               >
                 <Text style={styles.editModalButtonText}>Cancelar</Text>
               </TouchableOpacity>
@@ -496,12 +526,12 @@ export default function Feed() {
                 style={[
                   styles.editModalButton,
                   styles.saveButton,
-                  isSavingComment && styles.saveButtonLoading, // --- CAMBIO: Estilo de carga ---
+                  isSavingComment && styles.saveButtonLoading,
                 ]}
                 onPress={handleSaveComment}
-                disabled={isSavingComment} // --- CAMBIO: Deshabilitar mientras se guarda ---
+                disabled={isSavingComment}
               >
-                {isSavingComment ? ( // --- CAMBIO: Mostrar spinner o texto ---
+                {isSavingComment ? (
                   <ActivityIndicator size="small" color="#ffffff" />
                 ) : (
                   <Text style={[styles.editModalButtonText, { color: "#fff" }]}>Guardar</Text>

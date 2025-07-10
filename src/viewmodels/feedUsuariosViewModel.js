@@ -210,6 +210,8 @@ const crearComent = async (publicacionId, texto) => {
     }
   };
 
+  
+
   return {
     descripcion,
     setDescripcion,

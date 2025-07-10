@@ -7,7 +7,11 @@ import Verify2FAScreen from "./views/screens/Verify2FAScreen";
 import RegisterScreen from "./views/screens/RegisterScreen";
 import AdminScreen from "./views/screens/AdminScreen.js";
 import HomeScreen from "./views/screens/HomeScreen";
+import RepresentanteScreen from "./views/screens/RepresentanteFeedScreen.js"; 
+import PerfilUsuariosScreen from "./views/screens/PerfilUsuariosScreen.js"; 
 import LoginAdminScreen from "./views/screens/LoginAdminScreen";
+import SimpleUserScreen from "./views/screens/RepresentanteMenuScreen";
+import MenuAdminScreen from "./views/screens/ProfesorMenuScreen.js";
 import UsuarioScreen from "./views/screens/UsuarioScreen.js";
 import RecompensasScreen from "./views/screens/RecompensasScreen"; 
 import InsigniasScreen from "./views/screens/InsigniasScreen.js";
@@ -36,11 +40,34 @@ function ProtectedUsuarioScreen() {
   );
 }
 
-// Nuevo componente protegido para Insignias
 function ProtectedInsigniasScreen() {
   return (
     <ProtectedRoute>
       <InsigniasScreen />
+    </ProtectedRoute>
+  );
+}
+
+function ProtectedRepresentanteScreen() {
+  return (
+    <ProtectedRoute>
+      <RepresentanteScreen />
+    </ProtectedRoute>
+  );
+}
+
+function ProtectedMenuRepresentanteScreen() {
+  return (
+    <ProtectedRoute>
+      <SimpleUserScreen />
+    </ProtectedRoute>
+  );
+}
+
+function ProtectedMenuAdminScreen() {
+  return (
+    <ProtectedRoute>
+      <MenuAdminScreen />
     </ProtectedRoute>
   );
 }
@@ -54,7 +81,7 @@ export default function App() {
         <Stack.Navigator
           initialRouteName="Login"
           screenOptions={{
-            headerShown: false, // Ocultamos el header globalmente
+            headerShown: false,
           }}
         >
           {/* Pantallas de autenticación */}
@@ -79,6 +106,48 @@ export default function App() {
           />
 
           <Stack.Screen
+            name="MenuAdmin"
+            component={ProtectedMenuAdminScreen}
+            options={({ route }) => ({
+              header: ({ navigation, route }) => (
+                <CustomHeader
+                  title={route.params?.title || route.name}
+                  onMenuPress={() => setMenuVisible(true)}
+                />
+              ),
+            })}
+            initialParams={{ title: "MenuAdmin" }}
+          />
+
+          <Stack.Screen
+            name="MenuRepresentante"
+            component={ProtectedMenuRepresentanteScreen}
+            options={({ route }) => ({
+              header: ({ navigation, route }) => (
+                <CustomHeader
+                  title={route.params?.title || route.name}
+                  onMenuPress={() => setMenuVisible(true)}
+                />
+              ),
+            })}
+            initialParams={{ title: "MenuRepresentante" }}
+          />
+
+          <Stack.Screen
+            name="Representante"
+            component={ProtectedRepresentanteScreen}
+            options={({ route }) => ({
+              header: ({ navigation, route }) => (
+                <CustomHeader
+                  title={route.params?.title || route.name}
+                  onMenuPress={() => setMenuVisible(true)}
+                />
+              ),
+            })}
+            initialParams={{ title: "Representante" }}
+          />
+
+          <Stack.Screen
             name="Admin"
             component={ProtectedAdminScreen}
             options={({ route }) => ({
@@ -92,7 +161,6 @@ export default function App() {
             initialParams={{ title: "Administración" }}
           />
 
-          {/* Pantalla de Recompensas protegida */}
           <Stack.Screen
             name="Recompensas"
             component={ProtectedRouteWrapper(RecompensasScreen)}
@@ -107,7 +175,6 @@ export default function App() {
             initialParams={{ title: "Recompensas" }}
           />
 
-          {/* Pantalla de Insignias protegida */}
           <Stack.Screen
             name="Insignias"
             component={ProtectedRouteWrapper(InsigniasScreen)}
@@ -121,7 +188,8 @@ export default function App() {
             })}
             initialParams={{ title: "Insignias" }}
           />
-                  {/* Pantalla de perfil protegida */}
+
+          {/* Pantalla de perfil propio */}
           <Stack.Screen
             name="Perfil"
             component={ProtectedRouteWrapper(PerfilScreen)}
@@ -134,6 +202,20 @@ export default function App() {
               ),
             })}
             initialParams={{ title: "Perfil" }}
+          />
+
+          {/* NUEVA RUTA: PerfilUsuariosScreen */}
+          <Stack.Screen
+            name="PerfilUsuariosScreen"
+            component={ProtectedRouteWrapper(PerfilUsuariosScreen)}
+            options={({ route }) => ({
+              header: ({ navigation, route }) => (
+                <CustomHeader
+                  title="Perfil de Usuario"
+                  onMenuPress={() => setMenuVisible(true)}
+                />
+              ),
+            })}
           />
         </Stack.Navigator>
       </NavigationContainer>

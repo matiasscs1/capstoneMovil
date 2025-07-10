@@ -1,4 +1,3 @@
-// screens/PerfilScreen.js
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -15,37 +14,59 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Dimensions,
 } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
-import { styles } from "../../styles/PerfilScreen.styles.js";
-import { usePerfilViewModel } from "../../viewmodels/PerfilViewModel.js";
+import { styles } from "../../styles/PerfilUsuariosScreen.js";
+import { usePerfilUsuarioViewModel } from "../../viewmodels/perfilUsuariosViewModel.js";
 import { useAuth } from "../../context/AuthContext";
+const { width } = Dimensions.get('window');
 
 const mockProfile = {
   avatar: "https://i.pravatar.cc/150?u=maria",
 };
 
-export default function PerfilScreen({ navigation }) {
+export default function PerfilUsuariosScreen({ navigation, route }) {
+  const { userId } = route.params || {};
+  const { user } = useAuth();
+  const LOGGED_IN_USER_ID = user?.id_usuario;
+
+  // Estados del ViewModel
   const {
+    loading,
+    error,
     publicaciones,
-    cargarMisPublicaciones,
-    darLike,
-    borrarPublicacion,
     comentarios,
+    datosUsuario,
+    insignias,
+    cargarDatosUsuario,
+    cargarPublicacionesUsuario,
+    cargarInsigniasUsuario,
+    toggleLike,
+    borrarPublicacion,
     cargarComentarios,
-    comentar,
+    agregarComentario,
     actualizarComentario,
     borrarComentario,
-    conteoSeguidores,
-    contarSeguimientos,
-    cargarDatosUsuario,
-    insignias,
-    cargarInsigniasUsuario,
-  } = usePerfilViewModel();
-  const { user } = useAuth();
+    cargarSeguimientosUsuario,
+    seguirUsuario,
+    limpiarEstados,
+  } = usePerfilUsuarioViewModel();
+
 
   const [selectedInsignia, setSelectedInsignia] = useState(null);
   const [insigniaModalVisible, setInsigniaModalVisible] = useState(false);
+  const [perfilUsuario, setPerfilUsuario] = useState(null);
+  const [loadingPerfil, setLoadingPerfil] = useState(false);
+  const [errorPerfil, setErrorPerfil] = useState(null);
+  const [estadoSeguimiento, setEstadoSeguimiento] = useState({
+    siguiendo: false,
+    cargando: true, // Cambiado a true para mostrar loading desde el inicio
+    seguidores: 0,
+    seguidos: 0
+  });
+
+  // Estados para publicaciones y comentarios
   const [selectedPost, setSelectedPost] = useState(null);
   const [postDetailModalVisible, setPostDetailModalVisible] = useState(false);
   const [commentsModalVisible, setCommentsModalVisible] = useState(false);
@@ -53,7 +74,6 @@ export default function PerfilScreen({ navigation }) {
   const [editingComment, setEditingComment] = useState(null);
   const [editedCommentText, setEditedCommentText] = useState("");
   const [newCommentText, setNewCommentText] = useState("");
-  const [userData, setUserData] = useState(null); // Estado para datos del usuario
 
   // Estados de carga
   const [isSavingComment, setIsSavingComment] = useState(false);
@@ -63,88 +83,142 @@ export default function PerfilScreen({ navigation }) {
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [isDeletingComment, setIsDeletingComment] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      cargarMisPublicaciones();
-      contarSeguimientos();
-      loadUserData();
-      cargarInsigniasUsuario(user.id_usuario);
+  // Función para cargar el estado de seguimiento inmediatamente
+  const cargarEstadoSeguimiento = async (id) => {
+    if (!id || !LOGGED_IN_USER_ID) {
+      return;
     }
-  }, []);
 
-  // Función para cargar datos del usuario
-  const loadUserData = async () => {
-    if (!user?.id_usuario) return;
     try {
-      const datosUsuario = await cargarDatosUsuario(user.id_usuario);
-      setUserData(datosUsuario);
+      const seguimientos = await cargarSeguimientosUsuario(id);
+      const usuarioActualSigue = seguimientos.seguidores.some(
+        seg => seg.id_usuario.toString() === LOGGED_IN_USER_ID.toString()
+      );
+
+      setEstadoSeguimiento({
+        siguiendo: usuarioActualSigue,
+        cargando: false,
+        seguidores: seguimientos.seguidores.length,
+        seguidos: seguimientos.seguidos.length
+      });
     } catch (error) {
-      console.error("Error cargando datos del usuario:", error);
+      console.error('Error cargando estado de seguimiento:', error); // Este sí es útil mantenerlo
+      setEstadoSeguimiento(prev => ({ ...prev, cargando: false }));
     }
   };
 
-  if (!user) {
-    return (
-      <View style={styles.commentsLoaderContainer}>
-        <ActivityIndicator size="large" color="#f57c00" />
-      </View>
-    );
-  }
+  // Cargar datos del perfil (sin estado de seguimiento)
+  const cargarPerfilUsuario = async (id) => {
+    if (!id) {
+      setErrorPerfil('No se especificó el usuario');
+      return;
+    }
 
-  const LOGGED_IN_USER_ID = user.id_usuario;
-  // Usar la foto del userData si está disponible, sino usar la del user, sino el mock
-  const profileAvatar = userData?.foto_perfil?.[0]?.url ||
-    user.foto_perfil?.[0]?.url ||
-    mockProfile.avatar;
+    setLoadingPerfil(true);
+    setErrorPerfil(null);
 
-  const handleBackPress = () => navigation.goBack();
+    try {
+      // Cargar datos básicos del usuario
+      const datosUsuario = await cargarDatosUsuario(id);
+      if (!datosUsuario) throw new Error('No se encontraron datos del usuario');
+      setPerfilUsuario(datosUsuario);
 
+      // Cargar publicaciones
+      await Promise.all([
+        cargarPublicacionesUsuario(id),
+        cargarInsigniasUsuario(id)
+      ]);
+
+    } catch (error) {
+      console.error('Error cargando perfil:', error);
+      setErrorPerfil('No se pudo cargar el perfil del usuario');
+    } finally {
+      setLoadingPerfil(false);
+    }
+  };
+
+  const toggleSeguirUsuario = async () => {
+    if (estadoSeguimiento.cargando) return;
+
+    setEstadoSeguimiento(prev => ({ ...prev, cargando: true }));
+
+    try {
+      // Convertir userId a string para consistencia
+      const resultado = await seguirUsuario(userId.toString(), LOGGED_IN_USER_ID.toString());
+
+      setEstadoSeguimiento(prev => ({
+        ...prev,
+        siguiendo: resultado.siguiendo,
+        cargando: false,
+        seguidores: resultado.siguiendo ? prev.seguidores + 1 : prev.seguidores - 1
+      }));
+
+      Alert.alert(
+        'Éxito',
+        resultado.siguiendo ? 'Ahora sigues a este usuario' : 'Has dejado de seguir a este usuario'
+      );
+
+    } catch (error) {
+      console.error('Error al cambiar estado de seguimiento:', error);
+      Alert.alert('Error', error.message || 'No se pudo completar la acción');
+      setEstadoSeguimiento(prev => ({ ...prev, cargando: false }));
+    }
+  };
+
+  // Efectos
+  useEffect(() => {
+    if (userId) {
+      // Cargar perfil y estado de seguimiento en paralelo
+      cargarPerfilUsuario(userId);
+      cargarEstadoSeguimiento(userId);
+    } else {
+      setErrorPerfil('No se especificó el usuario');
+    }
+
+    return () => limpiarEstados();
+  }, [userId]);
+
+  useEffect(() => {
+    if (errorPerfil) {
+      Alert.alert('Error', errorPerfil, [
+        { text: 'OK', onPress: () => navigation.goBack() }
+      ]);
+    }
+  }, [errorPerfil, navigation]);
+
+  const openInsigniaDetail = (insignia) => {
+    setSelectedInsignia(insignia);
+    setInsigniaModalVisible(true);
+  };
+
+  const closeInsigniaDetail = () => {
+    setSelectedInsignia(null);
+    setInsigniaModalVisible(false);
+  };
+
+  // Funciones para manejar publicaciones
   const openPost = (post) => {
     setSelectedPost(post);
     setPostDetailModalVisible(true);
   };
+
   const closePost = () => {
     setSelectedPost(null);
     setPostDetailModalVisible(false);
-  };
-
-  const openComments = async () => {
-    if (!selectedPost) return;
-    setCommentsModalVisible(true);
-    setIsLoadingComments(true);
-    try {
-      await cargarComentarios(selectedPost.id_publicacion);
-    } catch {
-      Alert.alert("Error", "No se pudieron cargar los comentarios.");
-      setCommentsModalVisible(false);
-    } finally {
-      setIsLoadingComments(false);
-    }
-  };
-  const closeComments = () => setCommentsModalVisible(false);
-
-  const openEditModal = (comment) => {
-    setEditingComment(comment);
-    setEditedCommentText(comment.texto);
-    setEditModalVisible(true);
-  };
-  const closeEditModal = () => {
-    setEditingComment(null);
-    setEditedCommentText("");
-    setEditModalVisible(false);
   };
 
   const handleLike = async () => {
     if (!selectedPost || isLiking) return;
     setIsLiking(true);
     try {
-      const updated = await darLike(selectedPost.id_publicacion);
-      setSelectedPost((p) => ({
-        ...p,
+      const updated = await toggleLike(selectedPost.id_publicacion);
+      setSelectedPost(prev => ({
+        ...prev,
         cantidadLikes: updated.cantidadLikes,
         meGusta: updated.meGusta,
       }));
-    } catch {
+    } catch (error) {
+      console.error('Error al dar like:', error);
       Alert.alert("Error", "No se pudo procesar el like.");
     } finally {
       setIsLiking(false);
@@ -163,7 +237,9 @@ export default function PerfilScreen({ navigation }) {
           try {
             await borrarPublicacion(selectedPost.id_publicacion);
             closePost();
-          } catch {
+            await cargarPublicacionesUsuario(userId);
+          } catch (error) {
+            console.error('Error eliminando publicación:', error);
             Alert.alert("Error", "No se pudo eliminar.");
           } finally {
             setIsDeletingPost(false);
@@ -173,11 +249,29 @@ export default function PerfilScreen({ navigation }) {
     ]);
   };
 
+  // Funciones para manejar comentarios
+  const openComments = async () => {
+    if (!selectedPost) return;
+    setCommentsModalVisible(true);
+    setIsLoadingComments(true);
+    try {
+      await cargarComentarios(selectedPost.id_publicacion);
+    } catch (error) {
+      console.error('Error cargando comentarios:', error);
+      Alert.alert("Error", "No se pudieron cargar los comentarios.");
+      setCommentsModalVisible(false);
+    } finally {
+      setIsLoadingComments(false);
+    }
+  };
+
+  const closeComments = () => setCommentsModalVisible(false);
+
   const handleAddComment = async () => {
     if (!selectedPost || !newCommentText.trim() || isAddingComment) return;
     setIsAddingComment(true);
     try {
-      await comentar(selectedPost.id_publicacion, newCommentText);
+      await agregarComentario(selectedPost.id_publicacion, newCommentText);
       setNewCommentText("");
       await cargarComentarios(selectedPost.id_publicacion);
     } catch {
@@ -187,14 +281,23 @@ export default function PerfilScreen({ navigation }) {
     }
   };
 
+  const openEditModal = (comment) => {
+    setEditingComment(comment);
+    setEditedCommentText(comment.texto);
+    setEditModalVisible(true);
+  };
+
+  const closeEditModal = () => {
+    setEditingComment(null);
+    setEditedCommentText("");
+    setEditModalVisible(false);
+  };
+
   const handleSaveComment = async () => {
     if (!editingComment || !editedCommentText.trim() || isSavingComment) return;
     setIsSavingComment(true);
     try {
-      await actualizarComentario(
-        editingComment.id_comentario,
-        editedCommentText
-      );
+      await actualizarComentario(editingComment.id_comentario, editedCommentText);
       await cargarComentarios(selectedPost.id_publicacion);
       closeEditModal();
     } catch {
@@ -204,7 +307,7 @@ export default function PerfilScreen({ navigation }) {
     }
   };
 
-  const handleDeleteComment = (c) => {
+  const handleDeleteComment = (comment) => {
     if (isDeletingComment) return;
     Alert.alert("Eliminar comentario", "¿Confirmar?", [
       { text: "Cancelar", style: "cancel" },
@@ -214,9 +317,10 @@ export default function PerfilScreen({ navigation }) {
         onPress: async () => {
           setIsDeletingComment(true);
           try {
-            await borrarComentario(c.id_comentario);
+            await borrarComentario(comment.id_comentario);
             await cargarComentarios(selectedPost.id_publicacion);
-          } catch {
+          } catch (error) {
+            console.error('Error eliminando comentario:', error);
             Alert.alert("Error", "No se pudo eliminar.");
           } finally {
             setIsDeletingComment(false);
@@ -226,17 +330,50 @@ export default function PerfilScreen({ navigation }) {
     ]);
   };
 
+  // Renderizado condicional
+  if (!userId || errorPerfil) {
+    return (
+      <View style={styles.commentsLoaderContainer}>
+        <Text style={{ textAlign: 'center', color: '#e74c3c' }}>
+          {errorPerfil || 'Usuario no especificado'}
+        </Text>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={{ textAlign: 'center', color: '#007bff', marginTop: 10 }}>
+            Volver
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
-  const openInsigniaDetail = (insignia) => {
-    setSelectedInsignia(insignia);
-    setInsigniaModalVisible(true);
-  };
+  if (loadingPerfil) {
+    return (
+      <View style={styles.commentsLoaderContainer}>
+        <ActivityIndicator size="large" color="#f57c00" />
+        <Text style={{ marginTop: 10, textAlign: 'center' }}>Cargando perfil...</Text>
+      </View>
+    );
+  }
 
-  const closeInsigniaDetail = () => {
-    setSelectedInsignia(null);
-    setInsigniaModalVisible(false);
-  };
+  if (!perfilUsuario) {
+    return (
+      <View style={styles.commentsLoaderContainer}>
+        <Text style={{ textAlign: 'center' }}>No se pudo cargar el perfil del usuario</Text>
+        <TouchableOpacity onPress={() => cargarPerfilUsuario(userId)}>
+          <Text style={{ textAlign: 'center', color: '#007bff', marginTop: 10 }}>
+            Reintentar
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
+  // Datos del perfil
+  const profileAvatar = perfilUsuario?.foto_perfil?.[0]?.url || mockProfile.avatar;
+  const tituloHeader = `${perfilUsuario?.nombre || 'Usuario'} ${perfilUsuario?.apellido || ''}`.trim();
+  const esUsuarioDiferente = LOGGED_IN_USER_ID.toString() !== userId.toString();
+
+  // Componentes de renderizado
   const renderProfileHeader = () => (
     <View style={styles.profileHeader}>
       <View style={styles.profileTopRow}>
@@ -247,26 +384,49 @@ export default function PerfilScreen({ navigation }) {
             <Text style={styles.statLabel}>publicaciones</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>
-              {conteoSeguidores?.seguidoresCount || 0}
-            </Text>
+            <Text style={styles.statNumber}>{estadoSeguimiento.seguidores}</Text>
             <Text style={styles.statLabel}>seguidores</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>
-              {conteoSeguidores?.seguidosCount || 0}
-            </Text>
+            <Text style={styles.statNumber}>{estadoSeguimiento.seguidos}</Text>
             <Text style={styles.statLabel}>seguidos</Text>
           </View>
         </View>
       </View>
 
-      {/* AGREGAR EL CARRUSEL DE INSIGNIAS */}
+      <View style={styles.profileInfo}>
+        <Text style={styles.profileName}>{tituloHeader}</Text>
+        {perfilUsuario?.correo && (
+          <Text style={styles.profileEmail}>{perfilUsuario.correo}</Text>
+        )}
+      </View>
+
+      {esUsuarioDiferente && (
+        <TouchableOpacity
+          style={[
+            styles.followButton,
+            estadoSeguimiento.siguiendo && styles.followingButton,
+            estadoSeguimiento.cargando && styles.disabledButton
+          ]}
+          onPress={toggleSeguirUsuario}
+          disabled={estadoSeguimiento.cargando}
+        >
+          {estadoSeguimiento.cargando ? (
+            <ActivityIndicator size="small" color={estadoSeguimiento.siguiendo ? "#666" : "#fff"} />
+          ) : (
+            <Text style={estadoSeguimiento.siguiendo ? styles.followingText : styles.followText}>
+              {estadoSeguimiento.siguiendo ? 'Siguiendo' : 'Seguir'}
+            </Text>
+          )}
+        </TouchableOpacity>
+      )}
+
+      {/* CARRUSEL DE INSIGNIAS - AGREGAR AQUÍ */}
       {renderInsigniasCarrusel()}
     </View>
   );
 
-
+  // Agregar después del renderProfileHeader
   const renderInsigniasCarrusel = () => (
     <View style={styles.insigniasSection}>
       <Text style={styles.insigniasSectionTitle}>🏆 Insignias</Text>
@@ -307,17 +467,62 @@ export default function PerfilScreen({ navigation }) {
       </Text>
     </TouchableOpacity>
   );
+
   const renderPostGridItem = ({ item }) => (
     <TouchableOpacity style={styles.gridItem} onPress={() => openPost(item)}>
       <Image
-        source={{
-          uri: item.imagenes?.[0]?.url || "https://picsum.photos/400",
-        }}
+        source={{ uri: item.imagenes?.[0]?.url || "https://picsum.photos/400" }}
         style={styles.gridImage}
       />
     </TouchableOpacity>
   );
+  // Renderizado de insignias
+  const renderInsigniaItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.insigniaCard}
+      onPress={() => openInsigniaDetail(item)}
+      activeOpacity={0.8}
+    >
+      <View style={styles.insigniaIconContainer}>
+        <Image
+          source={{
+            uri: item.imagenes?.[0]?.url || "https://via.placeholder.com/60x60/FFD700/FFFFFF?text=🏆"
+          }}
+          style={styles.insigniaIcon}
+          resizeMode="cover"
+        />
+      </View>
+      <Text style={styles.insigniaTitle} numberOfLines={2}>
+        {item.nombre || "Insignia"}
+      </Text>
+      <Text style={styles.insigniaSubtitle} numberOfLines={1}>
+        {item.puntosrequeridos} puntos
+      </Text>
+    </TouchableOpacity>
+  );
 
+  const renderContent = () => {
+    if (publicaciones.length === 0) {
+      return (
+        <View style={styles.emptyListContainer}>
+          <Text style={styles.emptyListText}>
+            Este usuario no tiene publicaciones
+          </Text>
+        </View>
+      );
+    }
+    return (
+      <FlatList
+        data={publicaciones}
+        renderItem={renderPostGridItem}
+        keyExtractor={(item) => item.id_publicacion}
+        numColumns={3}
+        columnWrapperStyle={styles.gridRow}
+        showsVerticalScrollIndicator={false}
+        scrollEnabled={false}
+      />
+    );
+  };
   const renderPostDetailModal = () => (
     <Modal
       visible={postDetailModalVisible}
@@ -329,19 +534,11 @@ export default function PerfilScreen({ navigation }) {
           <>
             <View style={styles.postModalHeader}>
               <View style={styles.postModalUserInfo}>
-                {/* Cambiar el ícono por la imagen del usuario */}
-                <Image
-                  source={{ uri: profileAvatar }}
-                  style={styles.postModalUserAvatar}
-                />
+                <Image source={{ uri: profileAvatar }} style={styles.postModalUserAvatar} />
                 <View style={{ marginLeft: 8 }}>
-                  <Text style={styles.postModalUsername}>
-                    {userData?.nombre || selectedPost.autor?.nombre || "Autor"}
-                  </Text>
+                  <Text style={styles.postModalUsername}>{tituloHeader}</Text>
                   <Text style={styles.postModalDate}>
-                    {new Date(
-                      selectedPost.fechaPublicacion
-                    ).toLocaleString("es-ES")}
+                    {new Date(selectedPost.fechaPublicacion).toLocaleString("es-ES")}
                   </Text>
                 </View>
               </View>
@@ -351,22 +548,13 @@ export default function PerfilScreen({ navigation }) {
             </View>
             <ScrollView>
               <Image
-                source={{
-                  uri:
-                    selectedPost.imagenes?.[0]?.url ||
-                    "https://picsum.photos/400",
-                }}
+                source={{ uri: selectedPost.imagenes?.[0]?.url || "https://picsum.photos/400" }}
                 style={styles.modalImage}
               />
-              <Text style={styles.postCaption}>
-                {selectedPost.descripcion || ""}
-              </Text>
+              <Text style={styles.postCaption}>{selectedPost.descripcion || ""}</Text>
               <View style={styles.postActions}>
                 <TouchableOpacity
-                  style={[
-                    styles.actionButton,
-                    isLiking && styles.actionButtonDisabled,
-                  ]}
+                  style={[styles.actionButton, isLiking && styles.actionButtonDisabled]}
                   onPress={handleLike}
                   disabled={isLiking}
                 >
@@ -374,23 +562,16 @@ export default function PerfilScreen({ navigation }) {
                     <ActivityIndicator size="small" color="#f57c00" />
                   ) : (
                     <Text style={styles.actionIcon}>
-                      {selectedPost.meGusta ? "❤️" : "🤍"}{" "}
-                      {selectedPost.cantidadLikes}
+                      {selectedPost.meGusta ? "❤️" : "🤍"} {selectedPost.cantidadLikes}
                     </Text>
                   )}
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={openComments}
-                >
+                <TouchableOpacity style={styles.actionButton} onPress={openComments}>
                   <Text style={styles.actionIcon}>💬</Text>
                 </TouchableOpacity>
-                {selectedPost.autorId === LOGGED_IN_USER_ID && (
+                {selectedPost.autorId === LOGGED_IN_USER_ID.toString() && (
                   <TouchableOpacity
-                    style={[
-                      styles.actionButton,
-                      isDeletingPost && styles.actionButtonDisabled,
-                    ]}
+                    style={[styles.actionButton, isDeletingPost && styles.actionButtonDisabled]}
                     onPress={handleDeletePost}
                     disabled={isDeletingPost}
                   >
@@ -441,7 +622,7 @@ export default function PerfilScreen({ navigation }) {
                 data={comentarios}
                 keyExtractor={(item) => item.id_comentario}
                 renderItem={({ item }) => {
-                  const isAuthor = item.autorId === LOGGED_IN_USER_ID;
+                  const isAuthor = item.autorId === LOGGED_IN_USER_ID.toString();
                   return (
                     <View style={styles.commentItem}>
                       <View style={styles.commentTextContainer}>
@@ -458,10 +639,7 @@ export default function PerfilScreen({ navigation }) {
                           >
                             <Icon
                               name="edit-2"
-                              style={[
-                                styles.commentActionIcon,
-                                isDeletingComment && { opacity: 0.5 },
-                              ]}
+                              style={[styles.commentActionIcon, isDeletingComment && { opacity: 0.5 }]}
                             />
                           </TouchableOpacity>
                           <TouchableOpacity
@@ -469,18 +647,11 @@ export default function PerfilScreen({ navigation }) {
                             disabled={isDeletingComment}
                           >
                             {isDeletingComment ? (
-                              <ActivityIndicator
-                                size="small"
-                                color="#e74c3c"
-                                style={{ marginLeft: 8 }}
-                              />
+                              <ActivityIndicator size="small" color="#e74c3c" style={{ marginLeft: 8 }} />
                             ) : (
                               <Icon
                                 name="trash-2"
-                                style={[
-                                  styles.commentActionIcon,
-                                  { color: "#e74c3c" },
-                                ]}
+                                style={[styles.commentActionIcon, { color: "#e74c3c" }]}
                               />
                             )}
                           </TouchableOpacity>
@@ -498,20 +669,14 @@ export default function PerfilScreen({ navigation }) {
             )}
             <View style={styles.commentInputContainer}>
               <TextInput
-                style={[
-                  styles.commentInput,
-                  isAddingComment && { opacity: 0.7 },
-                ]}
+                style={[styles.commentInput, isAddingComment && { opacity: 0.7 }]}
                 placeholder="Agrega un comentario..."
                 value={newCommentText}
                 onChangeText={setNewCommentText}
                 editable={!isAddingComment}
               />
               <TouchableOpacity
-                style={[
-                  styles.sendButton,
-                  isAddingComment && styles.sendButtonDisabled,
-                ]}
+                style={[styles.sendButton, isAddingComment && styles.sendButtonDisabled]}
                 onPress={handleAddComment}
                 disabled={isAddingComment}
               >
@@ -539,10 +704,7 @@ export default function PerfilScreen({ navigation }) {
         <View style={styles.editModalContent}>
           <Text style={styles.editModalTitle}>Editar Comentario</Text>
           <TextInput
-            style={[
-              styles.editModalInput,
-              isSavingComment && { opacity: 0.7 },
-            ]}
+            style={[styles.editModalInput, isSavingComment && { opacity: 0.7 }]}
             value={editedCommentText}
             onChangeText={setEditedCommentText}
             multiline
@@ -555,12 +717,7 @@ export default function PerfilScreen({ navigation }) {
               onPress={closeEditModal}
               disabled={isSavingComment}
             >
-              <Text
-                style={[
-                  styles.editModalButtonText,
-                  isSavingComment && { opacity: 0.5 },
-                ]}
-              >
+              <Text style={[styles.editModalButtonText, isSavingComment && { opacity: 0.5 }]}>
                 Cancelar
               </Text>
             </TouchableOpacity>
@@ -576,9 +733,7 @@ export default function PerfilScreen({ navigation }) {
               {isSavingComment ? (
                 <ActivityIndicator size="small" color="#ffffff" />
               ) : (
-                <Text
-                  style={[styles.editModalButtonText, { color: "#fff" }]}
-                >
+                <Text style={[styles.editModalButtonText, { color: "#fff" }]}>
                   Guardar
                 </Text>
               )}
@@ -588,7 +743,7 @@ export default function PerfilScreen({ navigation }) {
       </View>
     </Modal>
   );
-
+  // Modal de detalle de insignia
   const renderInsigniaDetailModal = () => (
     <Modal
       visible={insigniaModalVisible}
@@ -636,6 +791,17 @@ export default function PerfilScreen({ navigation }) {
                     {selectedInsignia.puntosrequeridos}
                   </Text>
                 </View>
+
+                {selectedInsignia.historialReclamos && selectedInsignia.historialReclamos.length > 0 && (
+                  <View style={styles.modalInfoItem}>
+                    <Text style={styles.modalInfoLabel}>Veces reclamada:</Text>
+                    <Text style={styles.modalInfoValue}>
+                      {selectedInsignia.historialReclamos.reduce((total, reclamo) =>
+                        total + (reclamo.cantidadReclamada || 0), 0
+                      )}
+                    </Text>
+                  </View>
+                )}
               </View>
             </ScrollView>
           )}
@@ -643,24 +809,21 @@ export default function PerfilScreen({ navigation }) {
       </View>
     </Modal>
   );
-
   return (
-    <View style={styles.fullScreenContainer}>
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
       <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={styles.backButtonText}>{"<"}</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Perfil</Text>
+        <Text style={styles.headerTitle}>{tituloHeader}</Text>
       </View>
-      <FlatList
-        data={publicaciones}
-        renderItem={renderPostGridItem}
-        keyExtractor={(item) => item.id_publicacion}
-        numColumns={3}
-        ListHeaderComponent={renderProfileHeader}
-        columnWrapperStyle={styles.gridRow}
-      />
+
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {renderProfileHeader()}
+        {renderContent()}
+      </ScrollView>
+
       {renderPostDetailModal()}
       {renderCommentsModal()}
       {renderEditCommentModal()}

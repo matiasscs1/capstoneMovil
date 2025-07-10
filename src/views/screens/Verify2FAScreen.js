@@ -10,24 +10,30 @@ export default function Verify2FAScreen() {
   const navigation = useNavigation();
   const { correo } = useRoute().params;
 
-  const handleVerify = async () => {
-    try {
-      const { usuario } = await verify(correo);
+ const handleVerify = async () => {
+  try {
+    const { usuario } = await verify(correo);
 
-      if (!usuario || !usuario.token) {
-        Alert.alert('Error', 'Token o usuario inválido');
-        return;
-      }
-
-      // Guarda el usuario y token en contexto y AsyncStorage
-      await loginWith2FA(usuario, usuario.token);
-
-      navigation.replace('Usuario');
-    } catch (err) {
-      Alert.alert('❌', err.message);
+    if (!usuario || !usuario.token) {
+      Alert.alert('Error', 'Token o usuario inválido');
+      return;
     }
-  };
 
+    await loginWith2FA(usuario, usuario.token);
+
+    // Redirección simple: representante vs usuario normal
+    if (usuario.rol === 'representante') {
+      navigation.replace('MenuRepresentante');
+    } else if (usuario.rol === 'profesor') {
+      navigation.replace('MenuAdmin');
+    } else {
+      navigation.replace('Usuario');
+    }
+
+  } catch (err) {
+    Alert.alert('❌', err.message);
+  }
+};
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Verificación 2FA</Text>
