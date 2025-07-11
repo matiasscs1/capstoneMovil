@@ -244,19 +244,65 @@ export const obtenerInsignias = async () => {
 };
 
 export const crearInsignia = async (formData) => {
-  const token = await getAuthToken();
+ 
 
-  const res = await fetch(`${BASE_URL}/insignia`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-    body: formData,
-  });
+  
+  try {
+    const token = await getAuthToken();
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message);
-  return data;
+    const requestOptions = {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        // ❌ NO agregar Content-Type para FormData, React Native lo maneja automáticamente
+      },
+      body: formData,
+    };
+    
+  
+
+    const res = await fetch(`${BASE_URL}/insignia`, requestOptions);
+ 
+    
+    // ✅ MEJORAR: Obtener texto de respuesta primero para debug
+    const responseText = await res.text();
+    
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('❌ DEBUG Model - Error parsing JSON:', parseError);
+      console.error('❌ DEBUG Model - Response text that failed to parse:', responseText);
+      
+      // Si la respuesta contiene HTML, es probable que sea un error del servidor
+      if (responseText.includes('<html>') || responseText.includes('<!DOCTYPE')) {
+        throw new Error('El servidor devolvió HTML en lugar de JSON. Posible error del servidor.');
+      } else {
+        throw new Error(`Error parsing JSON: ${parseError.message}. Response: ${responseText}`);
+      }
+    }
+    
+    if (!res.ok) {
+      console.error('❌ DEBUG Model - Request failed with status:', res.status);
+      console.error('❌ DEBUG Model - Error data:', data);
+      throw new Error(data?.message || data?.error || `HTTP ${res.status}: ${responseText}`);
+    }
+    
+    return data;
+    
+  } catch (error) {
+    console.error('❌ DEBUG Model - Error completo en crearInsignia:', error);
+    console.error('❌ DEBUG Model - Error stack:', error.stack);
+    
+    // Re-throw con más contexto
+    if (error.message.includes('Network request failed')) {
+      throw new Error('Error de red. Verifica tu conexión a internet.');
+    } else if (error.message.includes('JSON')) {
+      throw new Error(`Error de formato en la respuesta del servidor: ${error.message}`);
+    } else {
+      throw error; // Re-throw el error original
+    }
+  }
 };
 
 
