@@ -234,13 +234,36 @@ const ModalForm = ({
     return !isNaN(number) && number >= 0;
   };
 
-  const validateDate = (date, isEndDate = false, startDate = null) => {
+  const validateAge = (birthDate) => {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    const age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+
+    // Calcular edad exacta considerando mes y día
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      return (age - 1) >= 8; // ✅ Cambio a 8 años
+    }
+    return age >= 8; // ✅ Cambio a 8 años
+  };
+
+  const validateDate = (date, isEndDate = false, startDate = null, isUserBirthDate = false) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const selectedDate = new Date(date);
-    
+
+    // ✅ Validación específica para fecha de nacimiento de usuario (8 años mínimo)
+    if (isUserBirthDate && modalType === 'usuario') {
+      // La fecha no puede ser futura
+      if (selectedDate > today) {
+        return false;
+      }
+      // Debe ser mayor de 8 años
+      return validateAge(date);
+    }
+
     if (!isEndDate) {
-      // Fecha de inicio no puede ser anterior a hoy
+      // Fecha de inicio no puede ser anterior a hoy (para actividades/misiones)
       return selectedDate >= today;
     } else {
       // Fecha de fin no puede ser anterior a fecha de inicio
@@ -252,6 +275,12 @@ const ModalForm = ({
     }
   };
 
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleTextChange = (key, value) => {
     if (key === 'nombre' || key === 'apellido' || key === 'titulo') {
       if (value === '' || validateText(value)) {
@@ -260,10 +289,21 @@ const ModalForm = ({
       } else {
         setErrors({ ...errors, [key]: 'Solo se permiten letras' });
       }
+    } else if (key === 'correo') {
+      // ✅ Validación específica para correo
+      setFormData({ ...formData, [key]: value });
+      if (value === '') {
+        setErrors({ ...errors, [key]: null });
+      } else if (!validateEmail(value)) {
+        setErrors({ ...errors, [key]: 'Ingresa un correo válido (ejemplo@dominio.com)' });
+      } else {
+        setErrors({ ...errors, [key]: null });
+      }
     } else {
       setFormData({ ...formData, [key]: value });
     }
   };
+
 
   const handleNumberChange = (key, value) => {
     if (value === '' || (validateNumber(parseFloat(value)) && parseFloat(value) >= 0)) {
@@ -275,19 +315,33 @@ const ModalForm = ({
   };
 
   const handleDateChange = (key, value, isEndDate = false) => {
-    const startDateKey = key === 'fechaFin' ? 'fechaInicio' : null;
-    const startDate = startDateKey ? formData[startDateKey] : null;
+  const startDateKey = key === 'fechaFin' ? 'fechaInicio' : null;
+  const startDate = startDateKey ? formData[startDateKey] : null;
+  const isUserBirthDate = key === 'fecha_nacimiento' && modalType === 'usuario';
+  
+  if (validateDate(value, isEndDate, startDate, isUserBirthDate)) {
+    setFormData({ ...formData, [key]: value });
+    setErrors({ ...errors, [key]: null });
+  } else {
+    let errorMsg = '';
     
-    if (validateDate(value, isEndDate, startDate)) {
-      setFormData({ ...formData, [key]: value });
-      setErrors({ ...errors, [key]: null });
+    if (isUserBirthDate) {
+      const selectedDate = new Date(value);
+      const today = new Date();
+      if (selectedDate > today) {
+        errorMsg = 'La fecha de nacimiento no puede ser futura';
+      } else {
+        errorMsg = 'El usuario debe ser mayor de 8 años'; // ✅ Cambio a 8 años
+      }
+    } else if (isEndDate) {
+      errorMsg = 'La fecha de fin debe ser posterior a la fecha de inicio';
     } else {
-      const errorMsg = isEndDate 
-        ? 'La fecha de fin debe ser posterior a la fecha de inicio'
-        : 'La fecha no puede ser anterior a hoy';
-      setErrors({ ...errors, [key]: errorMsg });
+      errorMsg = 'La fecha no puede ser anterior a hoy';
     }
-  };
+    
+    setErrors({ ...errors, [key]: errorMsg });
+  }
+};
 
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -323,25 +377,49 @@ const ModalForm = ({
   };
 
   const handleSave = () => {
-    // Validar que no hay errores
-    const hasErrors = Object.values(errors).some(error => error !== null);
-    if (hasErrors) {
-      Alert.alert('Error', 'Por favor corrige los errores antes de continuar');
+  // Validar campos obligatorios específicos para usuario
+  if (modalType === 'usuario') {
+    if (!formData.correo || formData.correo.trim() === '') {
+      Alert.alert('Error', 'El correo electrónico es obligatorio');
       return;
     }
-
-    if (!validateDates()) {
-      Alert.alert('Error', 'Las fechas no son válidas');
+    
+    if (!validateEmail(formData.correo)) {
+      Alert.alert('Error', 'Ingresa un correo electrónico válido');
       return;
     }
-
-    if ((modalType === 'insignia' || modalType === 'recompensa') && !formData.nuevaImagen && !currentEditId) {
-      Alert.alert('Error', 'Debe seleccionar una imagen.');
+    
+    // ✅ Validar fecha de nacimiento obligatoria y edad mínima de 8 años
+    if (!formData.fecha_nacimiento) {
+      Alert.alert('Error', 'La fecha de nacimiento es obligatoria');
       return;
     }
-    onSubmit();
-  };
+    
+    if (!validateAge(formData.fecha_nacimiento)) {
+      Alert.alert('Error', 'El usuario debe ser mayor de 8 años'); // ✅ Cambio a 8 años
+      return;
+    }
+  }
 
+  // Validar que no hay errores
+  const hasErrors = Object.values(errors).some(error => error !== null);
+  if (hasErrors) {
+    Alert.alert('Error', 'Por favor corrige los errores antes de continuar');
+    return;
+  }
+
+  if (!validateDates()) {
+    Alert.alert('Error', 'Las fechas no son válidas');
+    return;
+  }
+
+  if ((modalType === 'insignia' || modalType === 'recompensa') && !formData.nuevaImagen && !currentEditId) {
+    Alert.alert('Error', 'Debe seleccionar una imagen.');
+    return;
+  }
+  
+  onSubmit();
+};
   const onChangeDate = (event, selectedDate) => {
     setShowDatePicker(null);
     if (event.type === 'dismissed') return;
@@ -352,90 +430,122 @@ const ModalForm = ({
   };
 
   const renderFields = () =>
-    fields.map(({ label, key, type = 'text' }) => {
-      if (modalType === 'usuario' && key === 'rol') {
-        return (
-          <View key={key} style={modalStyles.fieldContainer}>
-            <Text style={modalStyles.fieldLabel}>{label}</Text>
-            <TextInput
-              style={[modalStyles.input, { backgroundColor: '#eee' }]}
-              value={formData[key]}
-              editable={false}
-            />
-          </View>
-        );
-      }
-
-      if ((modalType === 'insignia' || modalType === 'recompensa') && key === 'imagen') {
-        return (
-          <View key="imagen" style={modalStyles.fieldContainer}>
-            {imageUri && (
-              <Image source={{ uri: imageUri }} style={modalStyles.imagePreview} />
-            )}
-            <TouchableOpacity
-              style={modalStyles.imagePickerButton}
-              onPress={pickImage}
-            >
-              <Text style={modalStyles.imagePickerText}>
-                {currentEditId ? 'Cambiar Imagen' : 'Cargar Imagen'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        );
-      }
-
-      if (type === 'date') {
-        return (
-          <View key={key} style={modalStyles.fieldContainer}>
-            <Text style={modalStyles.fieldLabel}>{label}</Text>
-            <TouchableOpacity
-              onPress={() => setShowDatePicker(key)}
-              style={[modalStyles.input, { justifyContent: 'center' }]}
-            >
-              <Text>
-                {formData[key]
-                  ? new Date(formData[key]).toLocaleDateString()
-                  : 'Seleccionar fecha'}
-              </Text>
-            </TouchableOpacity>
-            {errors[key] && (
-              <Text style={modalStyles.errorText}>{errors[key]}</Text>
-            )}
-            {showDatePicker === key && (
-              <DateTimePicker
-                value={formData[key] ? new Date(formData[key]) : new Date()}
-                mode="date"
-                display="default"
-                onChange={onChangeDate}
-                minimumDate={new Date()} // No permitir fechas pasadas
-              />
-            )}
-          </View>
-        );
-      }
-
+  fields.map(({ label, key, type = 'text' }) => {
+    if (modalType === 'usuario' && key === 'rol') {
       return (
         <View key={key} style={modalStyles.fieldContainer}>
           <Text style={modalStyles.fieldLabel}>{label}</Text>
           <TextInput
-            style={modalStyles.input}
-            value={String(formData[key] || '')}
-            onChangeText={(text) => {
-              if (type === 'number') {
-                handleNumberChange(key, text);
-              } else {
-                handleTextChange(key, text);
-              }
-            }}
-            placeholder={label}
-            keyboardType={type === 'number' ? 'numeric' : 'default'}
+            style={[modalStyles.input, { backgroundColor: '#eee' }]}
+            value={formData[key]}
+            editable={false}
           />
+        </View>
+      );
+    }
+
+    if ((modalType === 'insignia' || modalType === 'recompensa') && key === 'imagen') {
+      return (
+        <View key="imagen" style={modalStyles.fieldContainer}>
+          {imageUri && (
+            <Image source={{ uri: imageUri }} style={modalStyles.imagePreview} />
+          )}
+          <TouchableOpacity
+            style={modalStyles.imagePickerButton}
+            onPress={pickImage}
+          >
+            <Text style={modalStyles.imagePickerText}>
+              {currentEditId ? 'Cambiar Imagen' : 'Cargar Imagen'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (type === 'date') {
+      // ✅ Configuración específica para fecha de nacimiento
+      const isUserBirthDate = key === 'fecha_nacimiento' && modalType === 'usuario';
+      const maxDate = isUserBirthDate ? new Date() : undefined; // Solo para fecha nacimiento
+      const minDate = isUserBirthDate ? undefined : new Date(); // Para otras fechas
+      
+      return (
+        <View key={key} style={modalStyles.fieldContainer}>
+          <Text style={modalStyles.fieldLabel}>
+            {label} {isUserBirthDate && <Text style={{ color: 'red' }}>*</Text>}
+          </Text>
+          <TouchableOpacity
+            onPress={() => setShowDatePicker(key)}
+            style={[
+              modalStyles.input, 
+              { justifyContent: 'center' },
+              // ✅ Borde rojo si hay error en fecha de nacimiento
+              isUserBirthDate && errors[key] && { borderColor: 'red', borderWidth: 1 }
+            ]}
+          >
+            <Text style={isUserBirthDate && !formData[key] ? { color: '#999' } : {}}>
+              {formData[key]
+                ? new Date(formData[key]).toLocaleDateString()
+                : isUserBirthDate 
+                  ? 'Seleccionar fecha de nacimiento (Mayor de 8 años)' // ✅ Cambio a 8 años
+                  : 'Seleccionar fecha'}
+            </Text>
+          </TouchableOpacity>
           {errors[key] && (
             <Text style={modalStyles.errorText}>{errors[key]}</Text>
           )}
+          {showDatePicker === key && (
+            <DateTimePicker
+              value={formData[key] ? new Date(formData[key]) : new Date()}
+              mode="date"
+              display="default"
+              onChange={onChangeDate}
+              minimumDate={minDate} // Para fechas futuras (actividades/misiones)
+              maximumDate={maxDate} // Para fecha de nacimiento (no futura)
+            />
+          )}
         </View>
       );
-    });
+    }
+
+    return (
+      <View key={key} style={modalStyles.fieldContainer}>
+        <Text style={modalStyles.fieldLabel}>
+          {label} {key === 'correo' && <Text style={{ color: 'red' }}>*</Text>}
+        </Text>
+        <TextInput
+          style={[
+            modalStyles.input,
+            key === 'correo' && errors[key] && { borderColor: 'red', borderWidth: 1 }
+          ]}
+          value={String(formData[key] || '')}
+          onChangeText={(text) => {
+            if (type === 'number') {
+              handleNumberChange(key, text);
+            } else {
+              handleTextChange(key, text);
+            }
+          }}
+          placeholder={
+            key === 'correo' 
+              ? 'ejemplo@dominio.com' 
+              : label
+          }
+          keyboardType={
+            key === 'correo' 
+              ? 'email-address' 
+              : type === 'number' 
+                ? 'numeric' 
+                : 'default'
+          }
+          autoCapitalize={key === 'correo' ? 'none' : 'sentences'}
+          autoCorrect={key === 'correo' ? false : true}
+        />
+        {errors[key] && (
+          <Text style={modalStyles.errorText}>{errors[key]}</Text>
+        )}
+      </View>
+    );
+  });
 
   return (
     <Modal
@@ -609,7 +719,7 @@ export default function AdminScreen() {
         const fd = new FormData();
         fd.append('nombre', formData.nombre || '');
         fd.append('descripcion', formData.descripcion || '');
-        
+
         if (modalType === 'insignia') {
           fd.append('puntosrequeridos', formData.puntosrequeridos || 0);
         } else {

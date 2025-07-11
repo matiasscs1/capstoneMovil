@@ -49,7 +49,6 @@ export const useRecompensaViewModel = () => {
         try {
             const data = await verCanjesUsuarios();
             setCanjes(data);
-            console.log('Todos los canjes:', data);
             return data;
         } catch (e) {
             setError(e.message);
@@ -65,7 +64,6 @@ export const useRecompensaViewModel = () => {
         try {
             const data = await verCanjesPorUsuario(usuarioId);
             setCanjesUsuario(data);
-            console.log('Canjes del usuario:', data);
             return data;
         } catch (e) {
             setError(e.message);

@@ -41,8 +41,9 @@ export default function PerfilScreen({ navigation }) {
     cargarDatosUsuario,
     insignias,
     cargarInsigniasUsuario,
+    actualizarPerfil, // Asume que tienes esta función en el ViewModel
   } = usePerfilViewModel();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth(); // Asume que tienes updateUser en el contexto
 
   const [selectedInsignia, setSelectedInsignia] = useState(null);
   const [insigniaModalVisible, setInsigniaModalVisible] = useState(false);
@@ -53,7 +54,17 @@ export default function PerfilScreen({ navigation }) {
   const [editingComment, setEditingComment] = useState(null);
   const [editedCommentText, setEditedCommentText] = useState("");
   const [newCommentText, setNewCommentText] = useState("");
-  const [userData, setUserData] = useState(null); // Estado para datos del usuario
+  const [userData, setUserData] = useState(null);
+
+  // Estados para el modal de editar perfil
+  const [editProfileModalVisible, setEditProfileModalVisible] = useState(false);
+  const [editProfileData, setEditProfileData] = useState({
+    nombre: "",
+    apellido: "",
+    correo: "",
+  });
+  const [editProfileErrors, setEditProfileErrors] = useState({});
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
   // Estados de carga
   const [isSavingComment, setIsSavingComment] = useState(false);
@@ -83,6 +94,93 @@ export default function PerfilScreen({ navigation }) {
     }
   };
 
+  // Funciones para editar perfil
+  const openEditProfile = () => {
+    // Solo usar userData, NO usar user del token
+    setEditProfileData({
+      nombre: userData?.nombre || "",
+      apellido: userData?.apellido || "",
+      correo: userData?.correo || "",
+    });
+    setEditProfileErrors({});
+    setEditProfileModalVisible(true);
+  };
+
+  const closeEditProfile = () => {
+    setEditProfileModalVisible(false);
+    setEditProfileData({ nombre: "", apellido: "", correo: "" }); // ✅ Ya está correcto
+    setEditProfileErrors({});
+  };
+
+
+  const validateEditProfileForm = () => {
+    const errors = {};
+
+    // Validar nombre
+    if (!editProfileData.nombre.trim()) {
+      errors.nombre = "El nombre es obligatorio";
+    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(editProfileData.nombre.trim())) {
+      errors.nombre = "El nombre solo puede contener letras";
+    }
+
+    // Validar apellido
+    if (!editProfileData.apellido.trim()) {
+      errors.apellido = "El apellido es obligatorio";
+    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(editProfileData.apellido.trim())) {
+      errors.apellido = "El apellido solo puede contener letras";
+    }
+
+    // 🔴 CAMBIAR ESTAS LÍNEAS:
+    // Validar correo
+    if (!editProfileData.correo.trim()) {        // ← Cambiar de "email" a "correo"
+      errors.correo = "El correo es obligatorio"; // ← Cambiar de "email" a "correo"
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(editProfileData.correo.trim())) { // ← Cambiar de "email" a "correo"
+        errors.correo = "Ingresa un correo válido";          // ← Cambiar de "email" a "correo"
+      }
+    }
+
+    setEditProfileErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSaveProfile = async () => {
+    if (!validateEditProfileForm() || isUpdatingProfile) return;
+
+    setIsUpdatingProfile(true);
+    try {
+      // Llamar a la función de actualizar perfil
+      const updatedUser = await actualizarPerfil(user.id_usuario, {
+        nombre: editProfileData.nombre.trim(),
+        apellido: editProfileData.apellido.trim(),
+        correo: editProfileData.correo.trim(),
+      });
+
+      // Actualizar el contexto de usuario
+      if (updateUser) {
+        updateUser(updatedUser);
+      }
+
+      // Recargar datos del usuario
+      await loadUserData();
+
+      Alert.alert("Éxito", "Perfil actualizado correctamente");
+      closeEditProfile();
+    } catch (error) {
+      // ✅ No hacer console.error para evitar logs en terminal
+
+      // Manejar errores específicos con mensajes amigables
+      if (error.message === 'CORREO_DUPLICADO') {
+        Alert.alert("Error", "Este correo ya está en uso por otro usuario.");
+      } else {
+        Alert.alert("Error", "No se pudo actualizar el perfil.");
+      }
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
   if (!user) {
     return (
       <View style={styles.commentsLoaderContainer}>
@@ -92,7 +190,6 @@ export default function PerfilScreen({ navigation }) {
   }
 
   const LOGGED_IN_USER_ID = user.id_usuario;
-  // Usar la foto del userData si está disponible, sino usar la del user, sino el mock
   const profileAvatar = userData?.foto_perfil?.[0]?.url ||
     user.foto_perfil?.[0]?.url ||
     mockProfile.avatar;
@@ -226,7 +323,6 @@ export default function PerfilScreen({ navigation }) {
     ]);
   };
 
-
   const openInsigniaDetail = (insignia) => {
     setSelectedInsignia(insignia);
     setInsigniaModalVisible(true);
@@ -236,36 +332,56 @@ export default function PerfilScreen({ navigation }) {
     setSelectedInsignia(null);
     setInsigniaModalVisible(false);
   };
+  const renderProfileHeader = () => {
+    // Solo usar userData para la foto, no usar user del token
+    const profileAvatar = userData?.foto_perfil?.[0]?.url || mockProfile.avatar;
 
-  const renderProfileHeader = () => (
-    <View style={styles.profileHeader}>
-      <View style={styles.profileTopRow}>
-        <Image source={{ uri: profileAvatar }} style={styles.avatar} />
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{publicaciones.length}</Text>
-            <Text style={styles.statLabel}>publicaciones</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>
-              {conteoSeguidores?.seguidoresCount || 0}
-            </Text>
-            <Text style={styles.statLabel}>seguidores</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>
-              {conteoSeguidores?.seguidosCount || 0}
-            </Text>
-            <Text style={styles.statLabel}>seguidos</Text>
+    return (
+      <View style={styles.profileHeader}>
+        <View style={styles.profileTopRow}>
+          <Image source={{ uri: profileAvatar }} style={styles.avatar} />
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{publicaciones.length}</Text>
+              <Text style={styles.statLabel}>publicaciones</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {conteoSeguidores?.seguidoresCount || 0}
+              </Text>
+              <Text style={styles.statLabel}>seguidores</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {conteoSeguidores?.seguidosCount || 0}
+              </Text>
+              <Text style={styles.statLabel}>seguidos</Text>
+            </View>
           </View>
         </View>
+
+        {/* Botón Editar Perfil */}
+        <TouchableOpacity
+          style={styles.editProfileButton}
+          onPress={openEditProfile}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.editProfileButtonText}>Editar Perfil</Text>
+        </TouchableOpacity>
+
+        {/* Mostrar nombre del usuario desde userData */}
+        <View style={styles.userInfoContainer}>
+          <Text style={styles.userName}>
+            {userData?.nombre} {userData?.apellido}
+          </Text>
+          <Text style={styles.userEmail}>{userData?.correo}</Text>
+        </View>
+
+        {/* AGREGAR EL CARRUSEL DE INSIGNIAS */}
+        {renderInsigniasCarrusel()}
       </View>
-
-      {/* AGREGAR EL CARRUSEL DE INSIGNIAS */}
-      {renderInsigniasCarrusel()}
-    </View>
-  );
-
+    );
+  };
 
   const renderInsigniasCarrusel = () => (
     <View style={styles.insigniasSection}>
@@ -307,6 +423,7 @@ export default function PerfilScreen({ navigation }) {
       </Text>
     </TouchableOpacity>
   );
+
   const renderPostGridItem = ({ item }) => (
     <TouchableOpacity style={styles.gridItem} onPress={() => openPost(item)}>
       <Image
@@ -318,96 +435,236 @@ export default function PerfilScreen({ navigation }) {
     </TouchableOpacity>
   );
 
-  const renderPostDetailModal = () => (
+  // Modal para editar perfil
+  const renderEditProfileModal = () => (
     <Modal
-      visible={postDetailModalVisible}
+      visible={editProfileModalVisible}
       animationType="slide"
-      onRequestClose={closePost}
+      transparent
+      onRequestClose={closeEditProfile}
     >
-      <SafeAreaView style={styles.modalContainer}>
-        {selectedPost && (
-          <>
-            <View style={styles.postModalHeader}>
-              <View style={styles.postModalUserInfo}>
-                {/* Cambiar el ícono por la imagen del usuario */}
-                <Image
-                  source={{ uri: profileAvatar }}
-                  style={styles.postModalUserAvatar}
-                />
-                <View style={{ marginLeft: 8 }}>
-                  <Text style={styles.postModalUsername}>
-                    {userData?.nombre || selectedPost.autor?.nombre || "Autor"}
-                  </Text>
-                  <Text style={styles.postModalDate}>
-                    {new Date(
-                      selectedPost.fechaPublicacion
-                    ).toLocaleString("es-ES")}
-                  </Text>
-                </View>
-              </View>
-              <TouchableOpacity onPress={closePost}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <View style={styles.editProfileModalOverlay}>
+          <View style={styles.editProfileModalContent}>
+            <View style={styles.editProfileHeader}>
+              <Text style={styles.editProfileTitle}>Editar Perfil</Text>
+              <TouchableOpacity onPress={closeEditProfile}>
                 <Text style={styles.closeButtonText}>✕</Text>
               </TouchableOpacity>
             </View>
-            <ScrollView>
-              <Image
-                source={{
-                  uri:
-                    selectedPost.imagenes?.[0]?.url ||
-                    "https://picsum.photos/400",
-                }}
-                style={styles.modalImage}
-              />
-              <Text style={styles.postCaption}>
-                {selectedPost.descripcion || ""}
-              </Text>
-              <View style={styles.postActions}>
-                <TouchableOpacity
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* Campo Nombre */}
+              <View style={styles.editProfileFieldContainer}>
+                <Text style={styles.editProfileLabel}>Nombre *</Text>
+                <TextInput
                   style={[
-                    styles.actionButton,
-                    isLiking && styles.actionButtonDisabled,
+                    styles.editProfileInput,
+                    editProfileErrors.nombre && styles.editProfileInputError,
+                    isUpdatingProfile && styles.editProfileInputDisabled,
                   ]}
-                  onPress={handleLike}
-                  disabled={isLiking}
-                >
-                  {isLiking ? (
-                    <ActivityIndicator size="small" color="#f57c00" />
-                  ) : (
-                    <Text style={styles.actionIcon}>
-                      {selectedPost.meGusta ? "❤️" : "🤍"}{" "}
-                      {selectedPost.cantidadLikes}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={openComments}
-                >
-                  <Text style={styles.actionIcon}>💬</Text>
-                </TouchableOpacity>
-                {selectedPost.autorId === LOGGED_IN_USER_ID && (
-                  <TouchableOpacity
-                    style={[
-                      styles.actionButton,
-                      isDeletingPost && styles.actionButtonDisabled,
-                    ]}
-                    onPress={handleDeletePost}
-                    disabled={isDeletingPost}
-                  >
-                    {isDeletingPost ? (
-                      <ActivityIndicator size="small" color="#e74c3c" />
-                    ) : (
-                      <Icon name="trash-2" size={24} color="#e74c3c" />
-                    )}
-                  </TouchableOpacity>
+                  value={editProfileData.nombre}
+                  onChangeText={(text) => {
+                    setEditProfileData(prev => ({ ...prev, nombre: text }));
+                    if (editProfileErrors.nombre) {
+                      setEditProfileErrors(prev => ({ ...prev, nombre: null }));
+                    }
+                  }}
+                  placeholder="Ingresa tu nombre"
+                  editable={!isUpdatingProfile}
+                />
+                {editProfileErrors.nombre && (
+                  <Text style={styles.editProfileErrorText}>
+                    {editProfileErrors.nombre}
+                  </Text>
+                )}
+              </View>
+
+              {/* Campo Apellido */}
+              <View style={styles.editProfileFieldContainer}>
+                <Text style={styles.editProfileLabel}>Apellido *</Text>
+                <TextInput
+                  style={[
+                    styles.editProfileInput,
+                    editProfileErrors.apellido && styles.editProfileInputError,
+                    isUpdatingProfile && styles.editProfileInputDisabled,
+                  ]}
+                  value={editProfileData.apellido}
+                  onChangeText={(text) => {
+                    setEditProfileData(prev => ({ ...prev, apellido: text }));
+                    if (editProfileErrors.apellido) {
+                      setEditProfileErrors(prev => ({ ...prev, apellido: null }));
+                    }
+                  }}
+                  placeholder="Ingresa tu apellido"
+                  editable={!isUpdatingProfile}
+                />
+                {editProfileErrors.apellido && (
+                  <Text style={styles.editProfileErrorText}>
+                    {editProfileErrors.apellido}
+                  </Text>
+                )}
+              </View>
+
+              {/* Campo Email */}
+              <View style={styles.editProfileFieldContainer}>
+                <Text style={styles.editProfileLabel}>Correo Electrónico *</Text>
+                <TextInput
+                  style={[
+                    styles.editProfileInput,
+                    editProfileErrors.correo && styles.editProfileInputError,    // ← Cambiar de "email" a "correo"
+                    isUpdatingProfile && styles.editProfileInputDisabled,
+                  ]}
+                  value={editProfileData.correo}    // ← Cambiar de "email" a "correo"
+                  onChangeText={(text) => {
+                    setEditProfileData(prev => ({ ...prev, correo: text }));    // ← Cambiar de "email" a "correo"
+                    if (editProfileErrors.correo) {                             // ← Cambiar de "email" a "correo"
+                      setEditProfileErrors(prev => ({ ...prev, correo: null })); // ← Cambiar de "email" a "correo"
+                    }
+                  }}
+                  placeholder="correo@ejemplo.com"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  editable={!isUpdatingProfile}
+                />
+                {editProfileErrors.correo && (
+                  <Text style={styles.editProfileErrorText}>
+                    {editProfileErrors.correo}
+                  </Text>
                 )}
               </View>
             </ScrollView>
-          </>
-        )}
-      </SafeAreaView>
+
+            {/* Botones */}
+            <View style={styles.editProfileButtonContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.editProfileCancelButton,
+                  isUpdatingProfile && styles.editProfileButtonDisabled,
+                ]}
+                onPress={closeEditProfile}
+                disabled={isUpdatingProfile}
+              >
+                <Text style={styles.editProfileCancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.editProfileSaveButton,
+                  isUpdatingProfile && styles.editProfileButtonDisabled,
+                ]}
+                onPress={handleSaveProfile}
+                disabled={isUpdatingProfile}
+              >
+                {isUpdatingProfile ? (
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : (
+                  <Text style={styles.editProfileSaveButtonText}>Guardar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
+
+  const renderPostDetailModal = () => {
+    // Solo usar userData para la foto, no user del token
+    const profileAvatar = userData?.foto_perfil?.[0]?.url || mockProfile.avatar;
+
+    return (
+      <Modal
+        visible={postDetailModalVisible}
+        animationType="slide"
+        onRequestClose={closePost}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          {selectedPost && (
+            <>
+              <View style={styles.postModalHeader}>
+                <View style={styles.postModalUserInfo}>
+                  <Image
+                    source={{ uri: profileAvatar }}
+                    style={styles.postModalUserAvatar}
+                  />
+                  <View style={{ marginLeft: 8 }}>
+                    <Text style={styles.postModalUsername}>
+                      {userData?.nombre || "Usuario"}
+                    </Text>
+                    <Text style={styles.postModalDate}>
+                      {new Date(
+                        selectedPost.fechaPublicacion
+                      ).toLocaleString("es-ES")}
+                    </Text>
+                  </View>
+                </View>
+                <TouchableOpacity onPress={closePost}>
+                  <Text style={styles.closeButtonText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              <ScrollView>
+                <Image
+                  source={{
+                    uri:
+                      selectedPost.imagenes?.[0]?.url ||
+                      "https://picsum.photos/400",
+                  }}
+                  style={styles.modalImage}
+                />
+                <Text style={styles.postCaption}>
+                  {selectedPost.descripcion || ""}
+                </Text>
+                <View style={styles.postActions}>
+                  <TouchableOpacity
+                    style={[
+                      styles.actionButton,
+                      isLiking && styles.actionButtonDisabled,
+                    ]}
+                    onPress={handleLike}
+                    disabled={isLiking}
+                  >
+                    {isLiking ? (
+                      <ActivityIndicator size="small" color="#f57c00" />
+                    ) : (
+                      <Text style={styles.actionIcon}>
+                        {selectedPost.meGusta ? "❤️" : "🤍"}{" "}
+                        {selectedPost.cantidadLikes}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={openComments}
+                  >
+                    <Text style={styles.actionIcon}>💬</Text>
+                  </TouchableOpacity>
+                  {selectedPost.autorId === LOGGED_IN_USER_ID && (
+                    <TouchableOpacity
+                      style={[
+                        styles.actionButton,
+                        isDeletingPost && styles.actionButtonDisabled,
+                      ]}
+                      onPress={handleDeletePost}
+                      disabled={isDeletingPost}
+                    >
+                      {isDeletingPost ? (
+                        <ActivityIndicator size="small" color="#e74c3c" />
+                      ) : (
+                        <Icon name="trash-2" size={24} color="#e74c3c" />
+                      )}
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </ScrollView>
+            </>
+          )}
+        </SafeAreaView>
+      </Modal>
+    );
+  };
 
   const renderCommentsModal = () => (
     <Modal
@@ -661,6 +918,7 @@ export default function PerfilScreen({ navigation }) {
         ListHeaderComponent={renderProfileHeader}
         columnWrapperStyle={styles.gridRow}
       />
+      {renderEditProfileModal()}
       {renderPostDetailModal()}
       {renderCommentsModal()}
       {renderEditCommentModal()}

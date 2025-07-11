@@ -10,6 +10,7 @@ import HomeScreen from "./views/screens/HomeScreen";
 import RepresentanteScreen from "./views/screens/RepresentanteFeedScreen.js"; 
 import PerfilUsuariosScreen from "./views/screens/PerfilUsuariosScreen.js"; 
 import LoginAdminScreen from "./views/screens/LoginAdminScreen";
+import ForgotPassword from "./views/screens/RecuperarContrseniaUser.js";
 import SimpleUserScreen from "./views/screens/RepresentanteMenuScreen";
 import MenuAdminScreen from "./views/screens/ProfesorMenuScreen.js";
 import UsuarioScreen from "./views/screens/UsuarioScreen.js";
@@ -89,6 +90,7 @@ export default function App() {
           <Stack.Screen name="Verify2FA" component={Verify2FAScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
           <Stack.Screen name="LoginAdmin" component={LoginAdminScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
 
           {/* Pantallas protegidas */}
           <Stack.Screen

@@ -6,6 +6,8 @@ import {
   registerTemp,
   verificarCorreo,
   recuperarCodigoAdmin,
+  solicitarCambioContrasenia,
+  cambiarContrasenia,
 } from '../models/auth.model.js';
 
 export const useAuthViewModel = () => {
@@ -15,6 +17,12 @@ export const useAuthViewModel = () => {
   const [codigoAdmin, setCodigoAdmin] = useState('');
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  
+  // ===== NUEVOS ESTADOS PARA RECUPERACIÓN DE CONTRASEÑA =====
+  const [correoRecuperacion, setCorreoRecuperacion] = useState('');
+  const [codigoRecuperacion, setCodigoRecuperacion] = useState('');
+  const [nuevaContrasenia, setNuevaContrasenia] = useState('');
+  const [modalRecuperacionVisible, setModalRecuperacionVisible] = useState(false);
 
   const login = async () => {
     setLoading(true);
@@ -48,7 +56,6 @@ export const useAuthViewModel = () => {
   const verificarCodigoRegistro = async () => {
     setLoading(true);
     try {
-
       const data = await verificarCorreo(correo, codigo);
       setModalVisible(false);
       return data;
@@ -77,9 +84,36 @@ export const useAuthViewModel = () => {
     }
   };
 
+  // ===== NUEVAS FUNCIONES PARA RECUPERACIÓN DE CONTRASEÑA =====
+  
+  const solicitarRecuperacionContrasenia = async () => {
+    setLoading(true);
+    try {
+      const data = await solicitarCambioContrasenia(correoRecuperacion);
+      setModalRecuperacionVisible(true);
+      return data;
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const cambiarContraseniaRecuperacion = async () => {
+    setLoading(true);
+    try {
+      const data = await cambiarContrasenia(correoRecuperacion, codigoRecuperacion, nuevaContrasenia);
+      setModalRecuperacionVisible(false);
+      // Limpiar los campos después de cambiar la contraseña
+      setCorreoRecuperacion('');
+      setCodigoRecuperacion('');
+      setNuevaContrasenia('');
+      return data;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return {
+    // Estados existentes
     correo,
     setCorreo,
     contrasenia,
@@ -97,5 +131,17 @@ export const useAuthViewModel = () => {
     setModalVisible,
     registrarTemporal,
     verificarCodigoRegistro,
+    
+    // ===== NUEVOS ESTADOS Y FUNCIONES PARA RECUPERACIÓN =====
+    correoRecuperacion,
+    setCorreoRecuperacion,
+    codigoRecuperacion,
+    setCodigoRecuperacion,
+    nuevaContrasenia,
+    setNuevaContrasenia,
+    modalRecuperacionVisible,
+    setModalRecuperacionVisible,
+    solicitarRecuperacionContrasenia,
+    cambiarContraseniaRecuperacion,
   };
 };

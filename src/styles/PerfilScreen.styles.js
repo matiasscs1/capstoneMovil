@@ -637,4 +637,178 @@ export const styles = StyleSheet.create({
     color: '#f57c00',
     fontWeight: 'bold',
   },
+  // Agregar estos estilos a tu PerfilScreen.styles.js
+
+  // Botón Editar Perfil
+  editProfileButton: {
+    backgroundColor: '#f57c00',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    marginVertical: 15,
+    alignSelf: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+
+  editProfileButtonText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+
+  // Modal Editar Perfil
+  editProfileModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  editProfileModalContent: {
+    backgroundColor: '#ffffff',
+    width: '90%',
+    maxHeight: '80%',
+    borderRadius: 15,
+    padding: 20,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+
+  editProfileHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+
+  editProfileTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+
+  editProfileFieldContainer: {
+    marginBottom: 20,
+  },
+
+  editProfileLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+
+  editProfileInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    fontSize: 16,
+    backgroundColor: '#f9f9f9',
+    color: '#333',
+  },
+
+  editProfileInputError: {
+    borderColor: '#e74c3c',
+    backgroundColor: '#fff5f5',
+  },
+
+  editProfileInputDisabled: {
+    opacity: 0.6,
+    backgroundColor: '#f0f0f0',
+  },
+
+  editProfileErrorText: {
+    color: '#e74c3c',
+    fontSize: 14,
+    marginTop: 5,
+    marginLeft: 5,
+  },
+
+  editProfileButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+
+  editProfileCancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    marginRight: 10,
+    backgroundColor: '#f8f8f8',
+  },
+
+  editProfileCancelButtonText: {
+    color: '#666',
+    fontWeight: '600',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+
+  editProfileSaveButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    backgroundColor: '#f57c00',
+    marginLeft: 10,
+  },
+
+  editProfileSaveButtonText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+
+  editProfileButtonDisabled: {
+    opacity: 0.6,
+  },
+  // Agregar estos estilos a tu PerfilScreen.styles.js
+
+  userInfoContainer: {
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 10,
+    paddingHorizontal: 20,
+  },
+
+  userName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+
+  userEmail: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
 });

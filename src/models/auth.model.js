@@ -90,3 +90,25 @@ export const recuperarCodigoAdmin = async (correo) => {
   return data;
 }
 
+
+export const solicitarCambioContrasenia = async (correo) => {
+  const res = await fetch(`${BASE_URL}/solicitar-cambio-contrasenia`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ correo }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const cambiarContrasenia = async (correo, codigo, contrasenia) => {
+  const res = await fetch(`${BASE_URL}/cambiar-contrasenia`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ correo, codigo, contrasenia }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};

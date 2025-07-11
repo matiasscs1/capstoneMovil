@@ -147,7 +147,6 @@ export const crearSeguimiento = async (token, seguidoId) => {
     body: JSON.stringify({ seguidoId }),
   });
   const data = await res.json();
-  console.log("Respuesta de crearSeguimiento:", data);
   if (!res.ok) throw new Error(data.message || "Error al seguir usuario");
   return data;
 };
@@ -180,4 +179,47 @@ export const publicacionesPorUsuario = async (autorId) => {
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || 'Error al obtener publicaciones del usuario');
   return data;
+};
+
+// Agregar esta función a tu perfil.model.js
+
+export const actualizarUsuario = async (id_usuario, datosActualizar) => {
+  try {
+    const token = await getAuthToken();
+    
+    if (!token) {
+      throw new Error('Token no encontrado');
+    }
+
+    const res = await fetch(`${BASE_URL}/usuario/${id_usuario}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(datosActualizar),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      // ✅ Detectar errores específicos sin mostrar detalles
+      if (res.status === 409 || (data.error && JSON.stringify(data.error).includes('duplicate key'))) {
+        throw new Error('CORREO_DUPLICADO');
+      }
+      
+      // ✅ Error genérico para otros casos
+      throw new Error('ERROR_ACTUALIZACION');
+    }
+
+    return data.usuario; 
+  } catch (error) {
+    // ✅ No hacer console.error para evitar logs en terminal
+    // Solo re-lanzar el error procesado
+    if (error.message === 'CORREO_DUPLICADO' || error.message === 'ERROR_ACTUALIZACION') {
+      throw error;
+    }
+    // Para otros errores, lanzar error genérico
+    throw new Error('ERROR_ACTUALIZACION');
+  }
 };

@@ -53,7 +53,6 @@ export const eliminarActividad = async (id) => {
 
 // MISIONES
 export const crearMision = async (misionData) => {
-  console.log('Datos de la misión:', misionData); // Para depuración
   const token = await getAuthToken();
   const res = await fetch(`${BASE_URL}/mision`, {
     method: 'POST',

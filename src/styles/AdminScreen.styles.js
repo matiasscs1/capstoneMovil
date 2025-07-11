@@ -278,4 +278,10 @@ export const modalStyles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
+  errorText: {
+    color: '#e74c3c',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
+  },
 });

@@ -20,7 +20,7 @@ import {
 export const usePerfilViewModel = () => {
   const { token } = useAuth(); // <-- Obtener el token del contexto
 
-   const [insignias, setInsignias] = useState([]);
+  const [insignias, setInsignias] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -31,27 +31,27 @@ export const usePerfilViewModel = () => {
 
   // TODAS las funciones ahora pasan el 'token' a la capa del modelo.
 
-    const cargarInsigniasUsuario = async (id_usuario) => {
-      if (!id_usuario) {
-        setError('ID de usuario requerido');
-        return;
-      }
-  
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await obtenerInsigniasReclamadasUsuario(id_usuario);
-        setInsignias(data || []);
-        return data;
-      } catch (err) {
-        console.error('Error cargando insignias:', err);
-        setError(err.message);
-        setInsignias([]);
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    };
+  const cargarInsigniasUsuario = async (id_usuario) => {
+    if (!id_usuario) {
+      setError('ID de usuario requerido');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await obtenerInsigniasReclamadasUsuario(id_usuario);
+      setInsignias(data || []);
+      return data;
+    } catch (err) {
+      console.error('Error cargando insignias:', err);
+      setError(err.message);
+      setInsignias([]);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const cargarMisPublicaciones = async () => {
     if (!token) return;
@@ -150,7 +150,7 @@ export const usePerfilViewModel = () => {
       throw e;
     }
   };
-   const cargarDatosUsuario = async (id_usuario) => {
+  const cargarDatosUsuario = async (id_usuario) => {
     setLoading(true);
     setError(null);
     try {
@@ -179,27 +179,47 @@ export const usePerfilViewModel = () => {
       setLoading(false);
     }
   }
-  
 
+  const actualizarPerfil = async (id_usuario, datosActualizar) => {
+    if (!token) {
+      throw new Error('Token no disponible');
+    }
 
-return {
-  loading,
-  error,
-  publicaciones,
-  comentarios,
-  seguidoresYSeguidos,
-  conteoSeguidores,
-  insignias, 
-  cargarMisPublicaciones,
-  cargarInsigniasUsuario, 
-  darLike,
-  borrarPublicacion,
-  cargarComentarios,
-  comentar,
-  actualizarComentario,
-  borrarComentario,
-  contarSeguimientos,
-  cargarDatosUsuario,
-  cargarPublicacionesporUsuario
-};
+    setLoading(true);
+    setError(null);
+
+    try {
+      const usuarioActualizado = await actualizarUsuario(id_usuario, datosActualizar);
+      return usuarioActualizado;
+    } catch (err) {
+      // ✅ No hacer console.error para evitar logs
+      // Solo establecer un mensaje genérico
+      setError('Error al actualizar perfil');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return {
+    loading,
+    error,
+    publicaciones,
+    comentarios,
+    seguidoresYSeguidos,
+    conteoSeguidores,
+    insignias,
+    cargarMisPublicaciones,
+    cargarInsigniasUsuario,
+    darLike,
+    borrarPublicacion,
+    cargarComentarios,
+    comentar,
+    actualizarComentario,
+    borrarComentario,
+    contarSeguimientos,
+    cargarDatosUsuario,
+    cargarPublicacionesporUsuario,
+    actualizarPerfil
+  };
 };
