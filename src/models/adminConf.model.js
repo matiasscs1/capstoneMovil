@@ -161,28 +161,61 @@ export const verRecompensas = async () => {
   return data.recompensas || data;
 };
 
+// Agrega estos logs en tu adminConf.model.js
+
 export const crearRecompensa = async (recompensaData) => {
-  const token = await getAuthToken();
-  const res = await fetch(`${BASE_URL}/recompensa`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(recompensaData),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message);
-  return data;
+  
+  try {
+    const token = await getAuthToken();
+    
+    const res = await fetch(`${BASE_URL}/recompensa`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: recompensaData, // FormData
+    });
+    
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.message);
+    }
+    
+    return data;
+  } catch (error) {
+    throw error;
+  }
 };
 
 export const actualizarRecompensa = async (id, recompensaData) => {
-  const token = await getAuthToken();
-  const res = await fetch(`${BASE_URL}/recompensa/${id}`, {
-    method: 'PUT',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(recompensaData),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message);
-  return data;
+  
+  
+  try {
+    const token = await getAuthToken();
+    
+    const url = `${BASE_URL}/recompensa/${id}`;
+  
+    
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}` },
+      body: recompensaData, // FormData
+    });
+    
+
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.message);
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('❌ ERROR Model - actualizarRecompensa:', error);
+    console.error('❌ ERROR Model - message:', error.message);
+    throw error;
+  }
 };
 
 export const eliminarRecompensa = async (id) => {
