@@ -1,12 +1,12 @@
 // EstadisticasScreen.js
-import React, { useEffect, useState } from "react"; // <-- MODIFICADO
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   ScrollView,
   ActivityIndicator,
   Dimensions,
-  RefreshControl, // <-- NUEVO: Importamos RefreshControl
+  RefreshControl,
 } from "react-native";
 import { PieChart, BarChart } from "react-native-chart-kit";
 import { useEstadisticasViewModel } from "../../viewmodels/EstadisticasViewModel.js";
@@ -14,10 +14,19 @@ import { styles } from "../../styles/EstadisticasScreen.styles.js";
 
 const screenWidth = Dimensions.get("window").width;
 
-const KpiCard = ({ value, label }) => (
+const KpiCard = ({ value, label, recommendations = [] }) => (
   <View style={styles.card}>
     <Text style={styles.cardValue}>{value}</Text>
     <Text style={styles.cardLabel}>{label}</Text>
+    {recommendations.length > 0 && (
+      <View style={styles.recommendationsContainer}>
+        {recommendations.slice(0, 2).map((rec, index) => (
+          <Text key={index} style={styles.recommendationText}>
+            {rec}
+          </Text>
+        ))}
+      </View>
+    )}
   </View>
 );
 
@@ -29,24 +38,23 @@ export default function EstadisticasScreen() {
     estadisticasMisiones,
     estadisticasInsignias,
     ranking,
+    estadisticasNotas,
+    atencionConcentracion,
     cargarTodasLasEstadisticas,
   } = useEstadisticasViewModel();
 
-  // <-- NUEVO: Estado para controlar la animación de recarga
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     cargarTodasLasEstadisticas();
   }, []);
 
-  // <-- NUEVO: Función que se ejecuta cuando el usuario desliza para recargar
   const handleRefresh = async () => {
-    setIsRefreshing(true); // Inicia la animación
-    await cargarTodasLasEstadisticas(); // Vuelve a cargar todos los datos
-    setIsRefreshing(false); // Detiene la animación cuando termina
+    setIsRefreshing(true);
+    await cargarTodasLasEstadisticas();
+    setIsRefreshing(false);
   };
 
-  // El indicador de carga inicial solo se muestra la primera vez
   if (loading && !isRefreshing) {
     return (
       <View style={styles.centered}>
@@ -99,21 +107,35 @@ export default function EstadisticasScreen() {
   };
 
   return (
-    // <-- MODIFICADO: Añadimos la prop 'refreshControl' al ScrollView
     <ScrollView
       style={styles.container}
       refreshControl={
         <RefreshControl
           refreshing={isRefreshing}
           onRefresh={handleRefresh}
-          colors={["#F97B22"]} // Color del spinner en Android
-          tintColor={"#F97B22"} // Color del spinner en iOS
+          colors={["#F97B22"]}
+          tintColor={"#F97B22"}
         />
       }
     >
       <Text style={styles.mainTitle}>Dashboard de Progreso</Text>
       <Text style={styles.subtitle}>Resumen de tus métricas principales</Text>
 
+      {/* ========== SECCIÓN DE NOTAS Y CONCENTRACIÓN ========== */}
+      <View style={styles.cardContainer}>
+        <KpiCard
+          value={estadisticasNotas?.notaEngagement ? `${estadisticasNotas.notaEngagement}/10` : "0/10"}
+          label="📚 Nota General"
+          recommendations={estadisticasNotas?.recomendaciones || []}
+        />
+        <KpiCard
+          value={atencionConcentracion?.notaAtencionConcentracion ? `${atencionConcentracion.notaAtencionConcentracion}/10` : "0/10"}
+          label="🧠 Atención y Concentración"
+          recommendations={atencionConcentracion?.recomendaciones || []}
+        />
+      </View>
+
+      {/* ========== SECCIÓN ORIGINAL ========== */}
       <View style={styles.cardContainer}>
         <KpiCard
           value={puntos?.puntosAcumulados || 0}
@@ -161,4 +183,3 @@ export default function EstadisticasScreen() {
     </ScrollView>
   );
 }
-

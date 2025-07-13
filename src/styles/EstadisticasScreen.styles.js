@@ -1,17 +1,16 @@
-
-  import { StyleSheet } from "react-native"; 
+import { StyleSheet } from "react-native"; 
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF", // <-- MODIFICADO: Fondo blanco puro
+    backgroundColor: "#FFFFFF",
     padding: 16,
   },
   centered: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#FFFFFF", // <-- MODIFICADO: Fondo blanco puro
+    backgroundColor: "#FFFFFF",
   },
   mainTitle: {
     fontSize: 28,
@@ -41,6 +40,7 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    minHeight: 120, // Para dar espacio a las recomendaciones
   },
   cardValue: {
     fontSize: 26,
@@ -51,6 +51,22 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     color: "#757575",
     marginTop: 4,
+    textAlign: "center",
+  },
+  // ========== NUEVOS ESTILOS PARA RECOMENDACIONES ==========
+  recommendationsContainer: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#f0f0f0",
+    width: "100%",
+  },
+  recommendationText: {
+    fontSize: 10,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 2,
+    lineHeight: 12,
   },
   chartSection: {
     backgroundColor: "#fff",

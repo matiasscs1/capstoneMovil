@@ -5,8 +5,9 @@ import {
   obtenerPuntosAcumulados,
   obtenerEstadisticasInsigniasReclamadas,
   obtenerRankingUsuarios,
+  obtenerEstadisticasNotas,
+  obtenerAtencionConcentracion,
 } from "../models/estadisticas.model.js"; 
-
 
 export const useEstadisticasViewModel = () => {
   const [loading, setLoading] = useState(false);
@@ -18,6 +19,8 @@ export const useEstadisticasViewModel = () => {
   const [puntos, setPuntos] = useState(null);
   const [estadisticasInsignias, setEstadisticasInsignias] = useState(null);
   const [ranking, setRanking] = useState([]);
+  const [estadisticasNotas, setEstadisticasNotas] = useState(null);
+  const [atencionConcentracion, setAtencionConcentracion] = useState(null);
 
   // --- Funciones para cargar cada estadística individualmente ---
 
@@ -96,6 +99,37 @@ export const useEstadisticasViewModel = () => {
     }
   };
 
+  // ========== NUEVAS FUNCIONES AGREGADAS ==========
+
+  const cargarEstadisticasNotas = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await obtenerEstadisticasNotas();
+      setEstadisticasNotas(data);
+      return data;
+    } catch (e) {
+      setError(e.message);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cargarAtencionConcentracion = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await obtenerAtencionConcentracion();
+      setAtencionConcentracion(data);
+      return data;
+    } catch (e) {
+      setError(e.message);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const cargarTodasLasEstadisticas = async () => {
     setLoading(true);
@@ -108,6 +142,8 @@ export const useEstadisticasViewModel = () => {
         obtenerPuntosAcumulados().then(setPuntos),
         obtenerEstadisticasInsigniasReclamadas().then(setEstadisticasInsignias),
         obtenerRankingUsuarios().then(setRanking),
+        obtenerEstadisticasNotas().then(setEstadisticasNotas),
+        obtenerAtencionConcentracion().then(setAtencionConcentracion),
       ]);
     } catch (e) {
       setError(e.message);
@@ -126,6 +162,8 @@ export const useEstadisticasViewModel = () => {
     puntos,
     estadisticasInsignias,
     ranking,
+    estadisticasNotas,
+    atencionConcentracion,
 
     // Funciones
     cargarEstadisticasCanjes,
@@ -133,6 +171,8 @@ export const useEstadisticasViewModel = () => {
     cargarPuntosAcumulados,
     cargarEstadisticasInsignias,
     cargarRanking,
+    cargarEstadisticasNotas,
+    cargarAtencionConcentracion,
     cargarTodasLasEstadisticas, 
   };
 };

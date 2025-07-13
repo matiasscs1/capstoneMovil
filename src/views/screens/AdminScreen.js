@@ -5,6 +5,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import EstadisticasScreen from './EstadisticasAdminScreen.js';
 import EvidenciasScreen from './EvidenciasAdminScreen.js';
 import ConfiguracionScreen from './ConfiguracionAdminScreen.js';
+import PanelModeracion from './ModeracionAdminScreen.js';
 import LogoutScreen from './LogoutScreen.js';
 import Loader from '../components/Loader.js';
 
@@ -12,12 +13,11 @@ const Tab = createBottomTabNavigator();
 
 export default function AdminScreen() {
   const [loading, setLoading] = useState(false);
-  const isFirstRender = useRef(true); // Para evitar loading en primer render
+  const isFirstRender = useRef(true);
 
   return (
     <>
       <Loader visible={loading} />
-
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerShown: false,
@@ -29,7 +29,7 @@ export default function AdminScreen() {
           },
           tabBarLabelStyle: {
             fontWeight: 'bold',
-            fontSize: 12,
+            fontSize: 10,
           },
           tabBarIcon: ({ focused, color, size }) => {
             let iconName;
@@ -38,6 +38,8 @@ export default function AdminScreen() {
               iconName = 'chart-bar';
             } else if (route.name === 'Evidencias') {
               iconName = focused ? 'folder' : 'folder-outline';
+            } else if (route.name === 'Moderación') {
+              iconName = focused ? 'shield-check' : 'shield-check-outline';
             } else if (route.name === 'Configuración') {
               iconName = focused ? 'cog' : 'cog-outline';
             } else if (route.name === 'Logout') {
@@ -47,16 +49,13 @@ export default function AdminScreen() {
             return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
           },
         })}
-        // Capturamos evento onTabPress para activar loader
         screenListeners={{
           tabPress: e => {
-            // Solo mostrar loading si no es el primer render
             if (!isFirstRender.current) {
               setLoading(true);
-              // Simulamos carga con delay, luego ocultamos loader
               setTimeout(() => {
                 setLoading(false);
-              }, 800); // 800 ms (ajusta como prefieras)
+              }, 800);
             } else {
               isFirstRender.current = false;
             }
@@ -65,6 +64,7 @@ export default function AdminScreen() {
       >
         <Tab.Screen name="Estadísticas" component={EstadisticasScreen} />
         <Tab.Screen name="Evidencias" component={EvidenciasScreen} />
+        <Tab.Screen name="Moderación" component={PanelModeracion} />
         <Tab.Screen name="Configuración" component={ConfiguracionScreen} />
         <Tab.Screen name="Logout" component={LogoutScreen} />
       </Tab.Navigator>
