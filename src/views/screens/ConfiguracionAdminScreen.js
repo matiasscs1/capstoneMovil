@@ -478,18 +478,7 @@ const ModalForm = ({
   // ... resto del código renderFields permanece igual ...
   const renderFields = () =>
     fields.map(({ label, key, type = 'text' }) => {
-      if (modalType === 'usuario' && key === 'rol') {
-        return (
-          <View key={key} style={modalStyles.fieldContainer}>
-            <Text style={modalStyles.fieldLabel}>{label}</Text>
-            <TextInput
-              style={[modalStyles.input, { backgroundColor: '#eee' }]}
-              value={formData[key]}
-              editable={false}
-            />
-          </View>
-        );
-      }
+
 
       if ((modalType === 'insignia' || modalType === 'recompensa') && key === 'imagen') {
         return (
@@ -703,7 +692,6 @@ export default function AdminScreen() {
       { label: 'Nombre', key: 'nombre' },
       { label: 'Apellido', key: 'apellido' },
       { label: 'Correo', key: 'correo' },
-      { label: 'Rol', key: 'rol' },
       { label: 'Fecha de Nacimiento', key: 'fecha_nacimiento', type: 'date' },
     ],
     actividad: [
@@ -744,23 +732,25 @@ export default function AdminScreen() {
   const handleOpenEditModal = (type, item) => {
     setModalType(type);
 
-
-    // ✅ NUEVO: Mapeo específico para recompensas
+    // Mapeo específico para cada tipo
     let mappedData = { ...item };
-    if (type === 'recompensa') {
+
+    if (type === 'usuario') {
+      // Para usuarios, excluir explícitamente el rol
+      const { rol, id_usuario, ...usuarioSinRol } = item;
+      mappedData = usuarioSinRol;
+    } else if (type === 'recompensa') {
       mappedData = {
         nombre: item.nombre || '',
         descripcion: item.descripcion || '',
         puntosRequeridos: item.puntosRequeridos || 0,
         cantidadDisponible: item.cantidadDisponible || 0,
-        imagenUrl: item.imagenUrl || '', // ← Mapear correctamente
+        imagenUrl: item.imagenUrl || '',
         activa: item.activa !== undefined ? item.activa : true
       };
     }
 
-
     setFormData(mappedData);
-
 
     const id =
       item.id_insignia ||
@@ -819,8 +809,16 @@ export default function AdminScreen() {
         if (currentEditId) {
           switch (modalType) {
             case 'usuario': {
-              const { rol, ...formDataWithoutRol } = formData;
-              await editarUsuario(currentEditId, formDataWithoutRol);
+              // ENVIAR SOLO LOS CAMPOS EDITABLES
+              const datosUsuario = {
+                nombre: formData.nombre,
+                apellido: formData.apellido,
+                correo: formData.correo,
+                fecha_nacimiento: formData.fecha_nacimiento
+              };
+
+
+              await editarUsuario(currentEditId, datosUsuario);
               break;
             }
             case 'actividad':

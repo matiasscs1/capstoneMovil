@@ -73,15 +73,6 @@ export default function RepresentanteScreen({ navigation }) {
     return <Loader visible={true} />;
   }
 
-  // Función para navegar al perfil (solo lectura)
-  const navegarAPerfil = (autorId) => {
-    if (autorId === currentUserId) {
-      navigation.navigate('Perfil');
-    } else {
-      navigation.navigate('PerfilUsuariosScreen', { userId: autorId });
-    }
-  };
-
   // Función para abrir modal de comentarios (solo lectura)
   const abrirModalComentarios = async (publicacion) => {
     setPublicacionSeleccionada(publicacion);
@@ -135,21 +126,17 @@ export default function RepresentanteScreen({ navigation }) {
           return (
             <View style={styles.card}>
               <View style={styles.header}>
-                <TouchableOpacity
-                  onPress={() => navegarAPerfil(pub.autorId)}
-                  style={styles.autorContainer}
-                  activeOpacity={0.7}
-                >
+                <View style={styles.autorContainer}>
                   <Image source={{ uri: fotoUsuario }} style={styles.avatar} />
                   <View style={styles.headerTextContainer}>
-                    <Text style={[styles.nombreAutor, styles.nombreClickeable]}>
+                    <Text style={styles.nombreAutor}>
                       {autor.nombre || 'Usuario'}
                     </Text>
                     <Text style={styles.fechaHeader}>
                       {formatearFechaLegible(pub.fechaPublicacion)}
                     </Text>
                   </View>
-                </TouchableOpacity>
+                </View>
               </View>
               
               {imagenPublicacion && (
@@ -205,14 +192,9 @@ export default function RepresentanteScreen({ navigation }) {
                 <View style={styles.comentarioContainer}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <View style={{ flex: 1 }}>
-                      <TouchableOpacity
-                        onPress={() => navegarAPerfil(item.autorId)}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={[styles.nombreComentario, styles.nombreClickeable]}>
-                          {item.autor?.nombre || 'Anónimo'}
-                        </Text>
-                      </TouchableOpacity>
+                      <Text style={styles.nombreComentario}>
+                        {item.autor?.nombre || 'Anónimo'}
+                      </Text>
                       <Text style={styles.textoComentario}>{item.texto}</Text>
                       <Text style={styles.fechaComentario}>
                         {formatearFechaLegible(item.fechaComentario)}
