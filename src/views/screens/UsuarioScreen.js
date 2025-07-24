@@ -20,7 +20,7 @@ import TerranovaFeedScreen from "./FeedUsuarioScreen";
 import PerfilScreen from "./PerfilScreen";
 import RecompensasScreen from "./RecompensasScreen";
 import InsigniasScreen from "./InsigniasScreen";
-
+a
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
@@ -97,7 +97,7 @@ export default function UsuarioScreen() {
           headerTitleAlign: "left",
           headerTitle: () => {
             let title = route.name;
-            if (route.name === "Publicaciones") title = "Terranova";
+            if (route.name === "Publicaciones") title = "Feed";
             if (route.name === "Participar") title = "Participar";
             if (route.name === "Calendario") title = "Calendario";
             if (route.name === "Estadísticas") title = "Estadísticas";

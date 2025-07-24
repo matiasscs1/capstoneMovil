@@ -258,16 +258,16 @@ const ModalForm = ({
     return isValid;
   };
 
-  const validateAge = (birthDate) => {
+  const validateAge = (birthDate, minAge = 16) => {
     const today = new Date();
     const birth = new Date(birthDate);
     const age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
 
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      return (age - 1) >= 8;
+      return (age - 1) >= minAge;
     }
-    return age >= 8;
+    return age >= minAge;
   };
 
   const validateDate = (date, isEndDate = false, startDate = null, isUserBirthDate = false) => {
@@ -275,11 +275,12 @@ const ModalForm = ({
     today.setHours(0, 0, 0, 0);
     const selectedDate = new Date(date);
 
-    if (isUserBirthDate && modalType === 'usuario') {
+    if (isUserBirthDate) {
       if (selectedDate > today) {
         return false;
       }
-      return validateAge(date);
+      // Solo 16 años para crear usuarios
+      return validateAge(date, 16);
     }
 
     if (!isEndDate) {
@@ -351,7 +352,7 @@ const ModalForm = ({
         if (selectedDate > today) {
           errorMsg = 'La fecha de nacimiento no puede ser futura';
         } else {
-          errorMsg = 'El usuario debe ser mayor de 8 años';
+          errorMsg = 'El administrador debe ser mayor de 16 años';
         }
       } else if (isEndDate) {
         errorMsg = 'La fecha de fin debe ser posterior a la fecha de inicio';
@@ -410,20 +411,25 @@ const ModalForm = ({
         return;
       }
 
-      if (!formData.fecha_nacimiento) {
-        Alert.alert('Error', 'La fecha de nacimiento es obligatoria');
-        return;
-      }
+      const isCreating = !currentEditId;
 
-      if (!validateAge(formData.fecha_nacimiento)) {
-        Alert.alert('Error', 'El usuario debe ser mayor de 8 años');
-        return;
+      if (isCreating) {
+        if (!formData.fecha_nacimiento) {
+          Alert.alert('Error', 'La fecha de nacimiento es obligatoria');
+          return;
+        }
+
+        if (!validateAge(formData.fecha_nacimiento, 16)) {
+          Alert.alert('Error', 'El administrador debe ser mayor de 16 años');
+          return;
+        }
       }
     }
 
-    // ✅ CORRECCIÓN: Solo validar errores relevantes para el tipo actual
     const camposRelevantes = {
-      'usuario': ['nombre', 'apellido', 'correo', 'fecha_nacimiento'],
+      'usuario': currentEditId
+        ? ['nombre', 'apellido', 'correo']
+        : ['nombre', 'apellido', 'correo', 'fecha_nacimiento'],
       'recompensa': ['nombre', 'descripcion', 'puntosRequeridos', 'cantidadDisponible'],
       'insignia': ['nombre', 'descripcion', 'puntosrequeridos'],
       'actividad': ['titulo', 'descripcion', 'fechaInicio', 'fechaFin'],
@@ -475,6 +481,13 @@ const ModalForm = ({
     }
   };
 
+  const getMaxDateForAge = (requiredAge = 16) => {
+    const today = new Date();
+    const maxDate = new Date(today.getFullYear() - requiredAge, today.getMonth(), today.getDate());
+    return maxDate;
+  };
+
+
   // ... resto del código renderFields permanece igual ...
   const renderFields = () =>
     fields.map(({ label, key, type = 'text' }) => {
@@ -520,7 +533,7 @@ const ModalForm = ({
                 {formData[key]
                   ? new Date(formData[key]).toLocaleDateString()
                   : isUserBirthDate
-                    ? 'Seleccionar fecha de nacimiento (Mayor de 8 años)'
+                    ? 'Seleccionar fecha de nacimiento (Mayor de 16 años)'
                     : 'Seleccionar fecha'}
               </Text>
             </TouchableOpacity>
@@ -529,12 +542,13 @@ const ModalForm = ({
             )}
             {showDatePicker === key && (
               <DateTimePicker
-                value={formData[key] ? new Date(formData[key]) : new Date()}
+                value={formData[key] ? new Date(formData[key]) :
+                  isUserBirthDate ? getMaxDateForAge(16) : new Date()}
                 mode="date"
                 display="default"
                 onChange={onChangeDate}
                 minimumDate={minDate}
-                maximumDate={maxDate}
+                maximumDate={isUserBirthDate ? getMaxDateForAge(16) : maxDate}
               />
             )}
           </View>
@@ -692,7 +706,8 @@ export default function AdminScreen() {
       { label: 'Nombre', key: 'nombre' },
       { label: 'Apellido', key: 'apellido' },
       { label: 'Correo', key: 'correo' },
-      { label: 'Fecha de Nacimiento', key: 'fecha_nacimiento', type: 'date' },
+      // ✅ CONDICIONAL: Solo mostrar fecha de nacimiento al crear
+      ...((!currentEditId) ? [{ label: 'Fecha de Nacimiento', key: 'fecha_nacimiento', type: 'date' }] : [])
     ],
     actividad: [
       { label: 'Título', key: 'titulo' },
@@ -732,13 +747,12 @@ export default function AdminScreen() {
   const handleOpenEditModal = (type, item) => {
     setModalType(type);
 
-    // Mapeo específico para cada tipo
     let mappedData = { ...item };
 
     if (type === 'usuario') {
-      // Para usuarios, excluir explícitamente el rol
-      const { rol, id_usuario, ...usuarioSinRol } = item;
-      mappedData = usuarioSinRol;
+      // ✅ CAMBIO: Excluir fecha_nacimiento al editar
+      const { rol, id_usuario, fecha_nacimiento, ...usuarioSinRolYFecha } = item;
+      mappedData = usuarioSinRolYFecha;
     } else if (type === 'recompensa') {
       mappedData = {
         nombre: item.nombre || '',
@@ -813,8 +827,7 @@ export default function AdminScreen() {
               const datosUsuario = {
                 nombre: formData.nombre,
                 apellido: formData.apellido,
-                correo: formData.correo,
-                fecha_nacimiento: formData.fecha_nacimiento
+                correo: formData.correo
               };
 
 
